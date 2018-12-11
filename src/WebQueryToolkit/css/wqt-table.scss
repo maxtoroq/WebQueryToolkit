@@ -1,0 +1,198 @@
+﻿// Copyright 2018 Max Toro Q.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+table.wqt-table {
+
+   > thead {
+
+      th {
+         cursor: default;
+
+         &.sortable {
+
+            > *::after {
+               content: "↑";
+               visibility: hidden;
+               font-family: Arial, sans-serif;
+               font-size: 80%;
+               margin-left: .2em;
+            }
+
+            &.sorting {
+
+               > *::after {
+                  visibility: visible;
+               }
+
+               &.asc {
+                  > *::after {
+                     content: "↑";
+                  }
+               }
+
+               &.desc {
+                  > *::after {
+                     content: "↓";
+                  }
+               }
+            }
+
+            a {
+               display: block;
+               color: inherit;
+               text-decoration: inherit;
+
+               &:hover, &:focus {
+                  text-decoration: underline;
+               }
+            }
+         }
+      }
+
+      > tr.filters {
+
+         &.disabled {
+            display: none;
+         }
+
+         > td {
+            padding-top: 0;
+            padding-bottom: 0;
+
+            &:first-child {
+               vertical-align: middle;
+               text-align: center;
+            }
+
+            &.disabled {
+               background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB90DARY2KDlqXqkAAAA+SURBVBjTjdAxDgAgCENRPBungfvv38lBo7YkbC+FNKoqgVA7gFDT3SmT1kULfeH5u4Wu8NWChTao+rQQEBNUigQKZG/oTwAAAABJRU5ErkJggg==);
+            }
+
+            > div {
+               position: relative;
+               background-color: inherit;
+            }
+
+            > div,
+            > div > * {
+               height: 34px;
+               min-width: 60px;
+            }
+
+            input {
+               padding: 0;
+            }
+
+            input, select {
+               position: absolute;
+               top: 0;
+               left: 0;
+               right: 0;
+               margin: 0;
+               width: 100%;
+               border: none;
+               border-radius: 0;
+               -webkit-box-sizing: border-box;
+               -moz-box-sizing: border-box;
+               box-sizing: border-box;
+               outline: none;
+               background-color: inherit;
+               background-color: transparent\9;
+               font-family: inherit;
+               -webkit-box-shadow: none;
+               -moz-box-shadow: none;
+               box-shadow: none;
+            }
+         }
+
+         form button {
+            padding: 0;
+            margin: 0;
+            border: none;
+            background-color: transparent;
+            /*
+             * aspneticons <http://www.aspneticons.com/>
+             * Licensed under Creative Commons Attribution 3.0 License <http://creativecommons.org/licenses/by/3.0/>
+             */
+            background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB90DAxMdCja46EQAAAEGSURBVDjL3dE/SgNREMfx75v9Y1ZFj7BnyAHcKwgeYCVYWXkMS4uA6bey8hARKxsvILJYiWJE0ejuvpkUQchGEoLp/MGr5v0+MIzrHp2bSIA2FWbKKnFOkGgDUw9plptX/dNLs9wcTJGrywHjylPVyu5WxNPbNw/Pn7yPG0YfNY+vY0Qcm3GIczA4O6UcFk4AymHh9g6OSeKAOBKqWtnuhIg4vBpmRhQKO0nUKgPIz16ziDcjiQMAvBpftacTBXi1VrkFzCMATaNUjWI2nc+XfwGzCEDlldrbwvLSdHt9u70f2cV1ad1e3xb9E9bMfwZe7m7WA8ph4fYPT1g7aZYvPePKyKLZBO2ouRbYD2oMAAAAAElFTkSuQmCC);
+            background-repeat: no-repeat;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+
+            &.clear {
+               /*
+               * aspneticons <http://www.aspneticons.com/>
+               * Licensed under Creative Commons Attribution 3.0 License <http://creativecommons.org/licenses/by/3.0/>
+               */
+               background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB90DAxMdFbuw5bEAAAGGSURBVDjLnZG/axRRFIW/92Zms+uPqBBBqyDYDBYSRFKZfyCdvQGxEuKfEVJJil1MK7G3TWMVq6wJ2ClIiEEsJEuiK2aTmXn3pNjsMhvdzeKFA+9w3/l49z438+yVvI+wIkMyxinnPD6ZQBZgem5Bwey/ND23IAddyPu3q3SyQJYb1y4n7LdP+NY64nen4PBPzo+fHbx3XKrEOAerK8vsbaw5D7C3seYePX5OrRJRSTxZblypxnjvCCYkkcSeyVoyEAbwvbnKkCBRq0QABBPHeaCaRATTQHgAcB4CUBRGVhhSt38+/BegDAHIgpEHDQ2PrJmndX3cPdTn778UzDTsnh8FuX2jyt1bV9m+52mm9CHNFPV8PAowNTnB+v3rzL/pZptPnAAelnx80Sjvvhjz63coBznzm58ueEGrfcLLozYN71lcnILXN/u9RqPFC3BDd3Cw86F/nk2Br8cDmk3H+Ilgps3USVuSUqQHZ0qRtqTyYofWUpT0w3W66kHqjAEA6AX/5U8BzlkKZGtn7bsAAAAASUVORK5CYII=);
+            }
+         }
+      }
+   }
+
+   > tbody {
+
+      > tr[onclick] {
+         cursor: pointer;
+
+         &:not(.selected):hover > td {
+            background-color: #d9edf7;
+         }
+      }
+
+      .trunc {
+         position: relative;
+
+         &:before {
+            content: attr(data-text);
+            position: absolute;
+            max-width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+         }
+
+         &:after {
+            content: attr(data-text);
+            display: inline-block;
+            height: 0;
+            overflow: hidden;
+         }
+      }
+   }
+
+   > tfoot {
+
+      .pager {
+         margin: 0;
+      }
+
+      .pagination {
+         margin: 0;
+      }
+   }
+
+   &.wqt-selectable {
+
+      > tbody > tr > td:first-child {
+         text-align: center;
+      }
+   }
+}
+
+.form-control.wqt-filter {
+   display: initial;
+   width: auto;
+}

@@ -1,0 +1,614 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+ Copyright 2018 Max Toro Q.
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<c:package name='WebQueryToolkit.WebQueryPackage' version='1.0' language='C#'
+   xmlns:c='http://maxtoroq.github.io/XCST'
+   xmlns:a='http://maxtoroq.github.io/XCST/application'
+   extension-element-prefixes='a'>
+
+   <c:import-namespace ns='System'/>
+   <c:import-namespace ns='System.Collections.Generic'/>
+   <c:import-namespace ns='System.Linq'/>
+   <c:import-namespace ns='System.Web.Mvc'/>
+   <c:import-namespace ns='Xcst.PackageModel'/>
+   <c:import-namespace ns='Xcst.Web.Mvc'/>
+
+   <c:variable name='page' value='((IXcstPackage)this).Context.TopLevelPackage' as='XcstViewPage'/>
+
+   <c:template name='table' visibility='public' expand-text='yes'>
+      <c:param name='queryResults' as='WebQueryResults' required='yes'/>
+      <c:param name='tableId' as='string'/>
+      <c:param name='tableClass' as='string'/>
+      <c:param name='rowUrlFn' as='Func&lt;object, string>'/>
+      <c:param name='filtersOptions' as='IDictionary&lt;string, IEnumerable&lt;SelectListItem>>'/>
+
+      <c:script>
+         <![CDATA[
+
+         Type resultsType = queryResults.GetType();
+         Type containerType = null;
+
+         while (resultsType != null) {
+
+            if (resultsType.IsGenericType
+               && resultsType.GetGenericTypeDefinition() == typeof(WebQueryResults<>)) {
+
+               containerType = resultsType.GetGenericArguments()[0];
+               break;
+            }
+
+            resultsType = resultsType.BaseType;
+         }
+
+         if (containerType == null) {
+            throw new ArgumentException($"{nameof(queryResults)} must be an instance of {typeof(WebQueryResults<>).FullName}.", nameof(queryResults));
+         }
+
+         ModelMetadata[] columns = ModelMetadataProviders.Current
+            .GetMetadataForProperties(null, containerType)
+            .Where(p => TableColumnDisplay(p))
+            .OrderBy(p => p.Order)
+            .ToArray();
+
+         Func<object, ModelMetadata> rowFn = element => ModelMetadataProviders.Current
+            .GetMetadataForType(() => element, containerType);
+
+         Func<ModelMetadata, ModelMetadata[]> cellsFn = r => r.Properties
+            .Where(p => columns.Any(p2 => p2.PropertyName == p.PropertyName))
+            .ToArray();
+
+         Func<ModelMetadata, bool> colSortableFn = c => TableColumnSort(c, queryResults);
+         Func<ModelMetadata, string> colSortUrlFn = c => colSortableFn(c) ? TableColumnSortUrl(c, queryResults) : null;
+
+         Func<string, bool> colSortingFn = s =>
+            queryResults.QueryParameters?.OrderBy?.Equals(s, StringComparison.OrdinalIgnoreCase) == true;
+
+         Func<ModelMetadata, string> colClassFn = c => string.Join(" ", new[] {
+            (colSortableFn(c) ? "sortable" : null),
+            (colSortingFn(c.PropertyName) ? "sorting asc" : null),
+            (colSortingFn(c.PropertyName + " desc") ? "sorting desc" : null)
+         }.Where(s => !string.IsNullOrEmpty(s)));
+
+         ModelStateDictionary modelState = this.page.ModelState;
+
+         Func<ModelMetadata, bool> colFilterableFn = c => TableColumnFilter(c, queryResults);
+
+         bool isFiltering = columns.Any(c => colFilterableFn(c)
+            && modelState.ContainsKey(c.PropertyName)
+            && modelState[c.PropertyName].Value != null);
+
+         object filterModel = (!containerType.IsAbstract) ?
+            Activator.CreateInstance(containerType)
+            : null;
+         ]]>
+      </c:script>
+      <c:call-template name='table-table'>
+         <c:with-param name='columns' value='columns'/>
+         <c:with-param name='tableId' value='tableId'/>
+         <c:with-param name='tableClass' value='tableClass'/>
+         <c:with-param name='queryResults' value='queryResults' tunnel='yes'/>
+         <c:with-param name='rowFn' value='rowFn' tunnel='yes'/>
+         <c:with-param name='cellsFn' value='cellsFn' tunnel='yes'/>
+         <c:with-param name='colClassFn' value='colClassFn' tunnel='yes'/>
+         <c:with-param name='colSortUrlFn' value='colSortUrlFn' tunnel='yes'/>
+         <c:with-param name='colFilterableFn' value='colFilterableFn' tunnel='yes'/>
+         <c:with-param name='filtersOptions' value='filtersOptions' tunnel='yes'/>
+         <c:with-param name='filterModel' value='filterModel' tunnel='yes'/>
+         <c:with-param name='isFiltering' value='isFiltering' tunnel='yes'/>
+         <c:with-param name='rowUrlFn' value='rowUrlFn' tunnel='yes'/>
+      </c:call-template>
+   </c:template>
+
+   <c:template name='table-table' visibility='public'>
+      <c:param name='columns' as='ModelMetadata[]' required='yes'/>
+      <c:param name='queryResults' as='WebQueryResults' required='yes' tunnel='yes'/>
+      <c:param name='tableId' as='string'/>
+      <c:param name='tableClass' as='string'/>
+
+      <table>
+         <c:if test='tableId != null'>
+            <c:attribute name='id' value='tableId'/>
+         </c:if>
+         <c:attribute name='class' value='new[] { "table table-striped wqt-table", tableClass }'/>
+         <c:call-template name='table-first-extra'/>
+         <thead>
+            <tr>
+               <th/>
+               <c:for-each name='col' in='columns'>
+                  <c:call-template name='table-column'>
+                     <c:with-param name='col' value='col'/>
+                  </c:call-template>
+               </c:for-each>
+            </tr>
+            <c:call-template name='table-filters-row'>
+               <c:with-param name='columns' value='columns'/>
+            </c:call-template>
+            <c:call-template name='table-head-extra'/>
+         </thead>
+         <tbody>
+            <c:for-each name='element' in='queryResults'>
+               <c:call-template name='table-row'>
+                  <c:with-param name='element' value='element'/>
+               </c:call-template>
+            </c:for-each>
+            <c:call-template name='table-body-extra'/>
+         </tbody>
+         <tfoot>
+            <tr>
+               <td colspan='{columns.Length + 1}'>
+                  <c:call-template name='table-pager'/>
+               </td>
+            </tr>
+            <c:call-template name='table-foot-extra'/>
+         </tfoot>
+      </table>
+   </c:template>
+
+   <c:template name='table-first-extra' visibility='public'/>
+   <c:template name='table-head-extra' visibility='public'/>
+   <c:template name='table-body-extra' visibility='public'/>
+   <c:template name='table-foot-extra' visibility='public'/>
+
+   <c:template name='table-column' visibility='public'>
+      <c:param name='col' as='ModelMetadata' required='yes'/>
+      <c:param name='colClassFn' as='Func&lt;ModelMetadata, string>' tunnel='yes'/>
+      <c:param name='colSortUrlFn' as='Func&lt;ModelMetadata, string>' tunnel='yes'/>
+
+      <c:variable name='cssClass' value='colClassFn(col)'/>
+      <c:variable name='url' value='colSortUrlFn(col)'/>
+
+      <th title='{col.GetDisplayName()}'>
+         <c:if test='!string.IsNullOrEmpty(cssClass)'>
+            <c:attribute name='class' value='cssClass'/>
+         </c:if>
+         <c:element name='{(url != null ? "a" : "span")}'>
+            <c:if test='url != null'>
+               <c:attribute name='href' value='url'/>
+            </c:if>
+            <c:value-of value='TableColumnText(col)'/>
+         </c:element>
+      </th>
+   </c:template>
+
+   <c:template name='table-filters-row' visibility='public'>
+      <c:param name='columns' as='ModelMetadata[]' required='yes'/>
+      <c:param name='colFilterableFn' as='Func&lt;ModelMetadata, bool>' tunnel='yes'/>
+      <c:param name='filtersOptions' as='IDictionary&lt;string, IEnumerable&lt;SelectListItem>>' required='yes' tunnel='yes'/>
+      <c:param name='filterModel' as='object' tunnel='yes'/>
+
+      <c:if test='filterModel != null
+         &amp;&amp; columns.Any(c => colFilterableFn(c))'>
+         <c:variable name='form'>wqt-table-form</c:variable>
+         <tr class='filters'>
+            <td>
+               <c:call-template name='table-filters-form'>
+                  <c:with-param name='formId' value='form'/>
+               </c:call-template>
+            </td>
+            <a:model value='filterModel'>
+               <c:for-each name='col' in='columns'>
+                  <td>
+                     <c:choose>
+                        <c:when test='colFilterableFn(col)'>
+                           <div>
+                              <c:choose>
+                                 <c:when test='filtersOptions?.ContainsKey(col.PropertyName) == true'>
+                                    <a:editor name='{col.PropertyName}' options='filtersOptions[col.PropertyName]' template='DropDownList' attributes='new { form }'/>
+                                 </c:when>
+                                 <c:otherwise>
+                                    <a:editor name='{col.PropertyName}' attributes='new { form, placeholder = "…" }'/>
+                                 </c:otherwise>
+                              </c:choose>
+                           </div>
+                        </c:when>
+                        <c:otherwise>
+                           <c:attribute name='class'>disabled</c:attribute>
+                        </c:otherwise>
+                     </c:choose>
+                  </td>
+               </c:for-each>
+            </a:model>
+         </tr>
+      </c:if>
+   </c:template>
+
+   <c:template name='table-filters-form' visibility='public'>
+      <c:param name='formId' as='string' required='yes'/>
+      <c:param name='queryResults' as='WebQueryResults' required='yes' tunnel='yes'/>
+      <c:param name='isFiltering' as='bool' tunnel='yes'/>
+
+      <c:variable name='queryParams' value='queryResults.QueryParameters'/>
+
+      <form id='{formId}' autocomplete='off'>
+         <c:if test='queryParams != null
+            &amp;&amp; queryParams.Settings.OrderByParameterAllowed
+            &amp;&amp; queryParams.HasQueryParam(queryParams.Settings.OrderByParameterName)'>
+            <input type='hidden' name='{queryParams.Settings.OrderByParameterName}' value='{queryParams.OrderBy}'/>
+         </c:if>
+         <button type='submit' class='apply' title='Aplicar filtro'>
+            <c:if test='isFiltering'>
+               <c:attribute name='hidden'>hidden</c:attribute>
+            </c:if>
+         </button>
+         <button type='button' class='clear' title='Quitar filtro'>
+            <c:if test='!isFiltering'>
+               <c:attribute name='hidden'>hidden</c:attribute>
+            </c:if>
+         </button>
+      </form>
+   </c:template>
+
+   <c:template name='table-row' visibility='public' expand-text='yes'>
+      <c:param name='element' as='object' required='yes'/>
+      <c:param name='rowFn' as='Func&lt;object, ModelMetadata>' required='yes' tunnel='yes'/>
+      <c:param name='cellsFn' as='Func&lt;ModelMetadata, ModelMetadata[]>' required='yes' tunnel='yes'/>
+      <c:param name='rowUrlFn' as='Func&lt;object, string>' tunnel='yes'/>
+
+      <c:variable name='row' value='rowFn(element)'/>
+      <c:variable name='rowUrl' value='rowUrlFn?.Invoke(element)'/>
+
+      <a:model value='row.Model' helper-name='htm'>
+         <!-- Make sure ModelMetadata is the same for all elements -->
+         <c:set ref='htm.ViewData.ModelMetadata' value='row'/>
+         <tr>
+            <c:if test='rowUrl != null'>
+               <c:attribute name='onclick'>window.location.href='{rowUrl}'</c:attribute>
+            </c:if>
+            <td/>
+            <c:for-each name='cell' in='cellsFn(row)'>
+               <td>
+                  <c:choose>
+                     <c:when test='TableCellTruncate(cell)'>
+                        <div class='trunc'>
+                           <c:attribute name='data-text'>
+                              <a:display-text name='{cell.PropertyName}'/>
+                           </c:attribute>
+                        </div>
+                     </c:when>
+                     <c:otherwise>
+                        <a:display name='{cell.PropertyName}'/>
+                     </c:otherwise>
+                  </c:choose>
+               </td>
+            </c:for-each>
+         </tr>
+      </a:model>
+   </c:template>
+
+   <c:template name='table-pager' visibility='public'>
+      <c:param name='queryResults' as='WebQueryResults' required='yes' tunnel='yes'/>
+
+      <c:call-template name='pager'>
+         <c:with-param name='queryResults' value='queryResults'/>
+      </c:call-template>
+   </c:template>
+
+   <c:function name='TableColumnDisplay' as='bool' visibility='public'>
+      <c:param name='col' as='ModelMetadata'/>
+
+      <c:return value='col.ShowForDisplay'/>
+   </c:function>
+
+   <c:function name='TableColumnFilter' as='bool' visibility='public'>
+      <c:param name='col' as='ModelMetadata'/>
+      <c:param name='queryResults' as='WebQueryResults'/>
+
+      <c:return value='queryResults.QueryParameters?.Settings
+         .FilterAllowedProperties
+         .Contains(col.PropertyName) == true'/>
+   </c:function>
+
+   <c:function name='TableColumnSort' as='bool' visibility='public'>
+      <c:param name='col' as='ModelMetadata'/>
+      <c:param name='queryResults' as='WebQueryResults'/>
+
+      <c:variable name='settings' value='queryResults.QueryParameters?.Settings'/>
+
+      <c:return value='settings != null
+         &amp;&amp; settings.OrderByParameterAllowed
+         &amp;&amp; (settings.OrderByAllowedProperties.Count == 0
+            || settings.OrderByAllowedProperties.Contains(col.PropertyName))'/>
+   </c:function>
+
+   <c:function name='TableColumnSortUrl' as='string' visibility='public'>
+      <c:param name='col' as='ModelMetadata'/>
+      <c:param name='queryResults' as='WebQueryResults'/>
+
+      <c:script>
+         <![CDATA[
+
+         WebQueryParameters queryParams = queryResults.QueryParameters;
+
+         if (queryParams == null) {
+            return null;
+         }
+
+         bool hasSortParam = queryParams.HasQueryParam(queryParams.Settings.OrderByParameterName);
+
+         Func<string, bool> isCurrentSort = s =>
+            queryParams.OrderBy?.Equals(s, StringComparison.OrdinalIgnoreCase) == true;
+
+         string sortParam = col.PropertyName;
+         string sortParamDesc = sortParam + " desc";
+
+         string sortVal = isCurrentSort(sortParamDesc) && hasSortParam ? string.Empty
+            : isCurrentSort(sortParam) ? sortParamDesc
+            : sortParam;
+
+         return queryParams.GetSortUrl(sortVal);
+         ]]>
+      </c:script>
+   </c:function>
+
+   <c:function name='TableColumnText' as='string' visibility='public'>
+      <c:param name='col' as='ModelMetadata'/>
+
+      <c:return value='col.ShortDisplayName ?? col.GetDisplayName()'/>
+   </c:function>
+
+   <c:function name='TableCellTruncate' as='bool' visibility='public'>
+      <c:param name='cell' as='ModelMetadata'/>
+
+      <c:return value='string.IsNullOrEmpty(cell.DataTypeName)
+         &amp;&amp; string.IsNullOrEmpty(cell.TemplateHint)
+         &amp;&amp; !(Nullable.GetUnderlyingType(cell.ModelType) ?? cell.ModelType).IsEnum'/>
+   </c:function>
+
+   <c:template name='pagination' visibility='public'>
+      <c:param name='queryResults' as='WebQueryResults' required='yes'/>
+      <c:param name='maxPagesToDisplay' value='12' as='int'/>
+      <c:param name='alwaysDisplayPreviousNext' value='true' as='bool'/>
+      <c:param name='alwaysDisplayFirstLast' value='true' as='bool'/>
+      <c:param name='urlPath' as='string'/>
+
+      <c:if test='queryResults.QueryParameters?.PaginationEnabled == true'>
+         <c:script>
+            <![CDATA[
+
+            int numberOfPages = queryResults.NumberOfPages;
+            int currentPage = queryResults.CurrentPage;
+            int skip = queryResults.QueryParameters.Skip;
+
+            if (currentPage > numberOfPages) {
+               currentPage = numberOfPages;
+            }
+
+            bool displayPrevious = alwaysDisplayPreviousNext || currentPage > 1;
+            bool displayNext = alwaysDisplayPreviousNext || currentPage != numberOfPages;
+            int compressedDisplayLimit = (int)Decimal.Floor((maxPagesToDisplay / 2) - 1);
+
+            int pagerStartPage = (numberOfPages == 0) ? 0
+               : (currentPage <= compressedDisplayLimit) ? 1
+               : currentPage - compressedDisplayLimit;
+
+            int pagerEndPage = (numberOfPages == 0) ? 0
+               : ((currentPage + compressedDisplayLimit) >= numberOfPages) ? numberOfPages
+               : currentPage + compressedDisplayLimit;
+
+            bool displayFirst = pagerStartPage > 1 && alwaysDisplayFirstLast;
+            bool displayLast = pagerEndPage < numberOfPages && alwaysDisplayFirstLast;
+
+            currentPage = queryResults.CurrentPage;
+
+            Func<int, bool> activeFn = p => p == queryResults.CurrentPage;
+            Func<int, string> pageUrlFn = p => PageUrl(queryResults, p, urlPath);
+            ]]>
+         </c:script>
+         <c:call-template name='pagination-list'>
+            <c:with-param name='displayPrevious' value='displayPrevious'/>
+            <c:with-param name='displayFirst' value='displayFirst'/>
+            <c:with-param name='displayLast' value='displayLast'/>
+            <c:with-param name='displayNext' value='displayNext'/>
+            <c:with-param name='currentPage' value='currentPage'/>
+            <c:with-param name='numberOfPages' value='numberOfPages'/>
+            <c:with-param name='pagerStartPage' value='pagerStartPage'/>
+            <c:with-param name='pagerEndPage' value='pagerEndPage'/>
+            <c:with-param name='queryResults' value='queryResults' tunnel='yes'/>
+            <c:with-param name='activeFn' value='activeFn' tunnel='yes'/>
+            <c:with-param name='pageUrlFn' value='pageUrlFn' tunnel='yes'/>
+         </c:call-template>
+      </c:if>
+   </c:template>
+
+   <c:template name='pagination-list' visibility='public'>
+      <c:param name='displayPrevious' as='bool' required='yes'/>
+      <c:param name='displayFirst' as='bool' required='yes'/>
+      <c:param name='displayLast' as='bool' required='yes'/>
+      <c:param name='displayNext' as='bool' required='yes'/>
+      <c:param name='currentPage' as='int' required='yes'/>
+      <c:param name='numberOfPages' as='int' required='yes'/>
+      <c:param name='pagerStartPage' as='int' required='yes'/>
+      <c:param name='pagerEndPage' as='int' required='yes'/>
+
+      <ul class='pagination'>
+         <c:if test='displayPrevious'>
+            <c:call-template name='pagination-item'>
+               <c:with-param name='page' value='currentPage - 1'/>
+               <c:with-param name='text'>← Anterior</c:with-param>
+               <c:with-param name='class'>page-prev</c:with-param>
+            </c:call-template>
+         </c:if>
+         <c:if test='displayFirst'>
+            <c:call-template name='pagination-item'>
+               <c:with-param name='page' value='1'/>
+            </c:call-template>
+         </c:if>
+         <c:if test='numberOfPages > 0'>
+            <c:for-each name='page' in='Enumerable.Range(pagerStartPage, pagerEndPage - pagerStartPage + 1)'>
+               <c:call-template name='pagination-item'>
+                  <c:with-param name='page' value='page'/>
+               </c:call-template>
+            </c:for-each>
+         </c:if>
+         <c:if test='displayLast'>
+            <c:call-template name='pagination-item'>
+               <c:with-param name='page' value='numberOfPages'/>
+            </c:call-template>
+         </c:if>
+         <c:if test='displayNext'>
+            <c:call-template name='pagination-item'>
+               <c:with-param name='page' value='currentPage + 1'/>
+               <c:with-param name='text'>Siguiente →</c:with-param>
+               <c:with-param name='class'>page-next</c:with-param>
+            </c:call-template>
+         </c:if>
+      </ul>
+   </c:template>
+
+   <c:template name='pagination-item' visibility='public'>
+      <c:param name='page' as='int' required='yes'/>
+      <c:param name='text' as='string'/>
+      <c:param name='@class' as='string'/>
+      <c:param name='activeFn' as='Func&lt;int, bool>' required='yes' tunnel='yes'/>
+      <c:param name='pageUrlFn' as='Func&lt;int, string>' required='yes' tunnel='yes'/>
+
+      <c:variable name='active' value='activeFn(page)'/>
+      <c:variable name='url' value='(active) ? null : pageUrlFn(page)'/>
+      <c:variable name='cssClass' value='(active) ? "active"
+         : (url == null) ? "disabled"
+         : null'/>
+
+      <li class='{new[] { "page-item", @class, cssClass }}'>
+         <c:element name='{(url != null ? "a" : "span")}'>
+            <c:attribute name='class'>page-link</c:attribute>
+            <c:if test='url != null'>
+               <c:attribute name='href' value='url'/>
+            </c:if>
+            <c:value-of value='text ?? (object)page'/>
+         </c:element>
+      </li>
+   </c:template>
+
+   <c:template name='pager' visibility='public'>
+      <c:param name='queryResults' as='WebQueryResults' required='yes'/>
+      <c:param name='urlPath' as='string'/>
+
+      <c:if test='queryResults.QueryParameters?.PaginationEnabled == true'>
+         <c:script>
+            <![CDATA[
+
+            int currentPage = queryResults.CurrentPage;
+            int numberOfPages = queryResults.NumberOfPages;
+            int? totalCount = queryResults.TotalCount;
+            int skip = queryResults.QueryParameters.Skip;
+            int count = queryResults.Count;
+
+            int firstResultPosition = (count == 0) ? 0 : skip + 1;
+            int lastResultPosition = (count == 0) ? 0 : skip + count;
+
+            Func<int, bool> activeFn = p => p == queryResults.CurrentPage;
+            Func<int, string> pageUrlFn = p => PageUrl(queryResults, p, urlPath);
+            ]]>
+         </c:script>
+         <c:call-template name='pager-list'>
+            <c:with-param name='currentPage' value='currentPage'/>
+            <c:with-param name='numberOfPages' value='numberOfPages'/>
+            <c:with-param name='firstResultPosition' value='firstResultPosition'/>
+            <c:with-param name='lastResultPosition' value='lastResultPosition'/>
+            <c:with-param name='totalCount' value='totalCount'/>
+            <c:with-param name='queryResults' value='queryResults' tunnel='yes'/>
+            <c:with-param name='activeFn' value='activeFn' tunnel='yes'/>
+            <c:with-param name='pageUrlFn' value='pageUrlFn' tunnel='yes'/>
+         </c:call-template>
+      </c:if>
+   </c:template>
+
+   <c:template name='pager-list' visibility='public' expand-text='yes'>
+      <c:param name='currentPage' as='int' required='yes'/>
+      <c:param name='numberOfPages' as='int' required='yes'/>
+      <c:param name='firstResultPosition' as='int' required='yes'/>
+      <c:param name='lastResultPosition' as='int' required='yes'/>
+      <c:param name='totalCount' as='int?' required='yes'/>
+
+      <ul class='pager'>
+         <c:call-template name='pager-item'>
+            <c:with-param name='page' value='1'/>
+            <c:with-param name='text'>|←</c:with-param>
+            <c:with-param name='title'>Primera</c:with-param>
+         </c:call-template>
+         <c:call-template name='pager-item'>
+            <c:with-param name='page' value='currentPage - 1'/>
+            <c:with-param name='text'>←</c:with-param>
+            <c:with-param name='title'>Anterior</c:with-param>
+         </c:call-template>
+         <li>
+            <span>
+               <c:value-of value='new[] { firstResultPosition, lastResultPosition }' separator=' - '/>
+               <c:if test='totalCount != null'>
+                  <c:text> de {totalCount}</c:text>
+               </c:if>
+            </span>
+         </li>
+         <c:call-template name='pager-item'>
+            <c:with-param name='page' value='currentPage + 1'/>
+            <c:with-param name='text'>→</c:with-param>
+            <c:with-param name='title'>Siguiente</c:with-param>
+         </c:call-template>
+         <c:call-template name='pager-item'>
+            <c:with-param name='page' value='numberOfPages'/>
+            <c:with-param name='text'>→|</c:with-param>
+            <c:with-param name='title'>Última</c:with-param>
+         </c:call-template>
+      </ul>
+   </c:template>
+
+   <c:template name='pager-item' visibility='public'>
+      <c:param name='page' as='int' required='yes'/>
+      <c:param name='text' as='string'/>
+      <c:param name='title' as='string'/>
+      <c:param name='activeFn' as='Func&lt;int, bool>' required='yes' tunnel='yes'/>
+      <c:param name='pageUrlFn' as='Func&lt;int, string>' required='yes' tunnel='yes'/>
+
+      <c:variable name='active' value='activeFn(page)'/>
+      <c:variable name='url' value='(active) ? null : pageUrlFn(page)'/>
+      <c:variable name='cssClass' value='(url == null) ? "disabled" : null'/>
+
+      <li>
+         <c:if test='cssClass != null'>
+            <c:attribute name='class' value='cssClass'/>
+         </c:if>
+         <c:element name='{(url != null ? "a" : "span")}'>
+            <c:if test='url != null'>
+               <c:attribute name='href' value='url'/>
+            </c:if>
+            <c:if test='title != null'>
+               <c:attribute name='title' value='title'/>
+            </c:if>
+            <c:value-of value='text ?? (object)page'/>
+         </c:element>
+      </li>
+   </c:template>
+
+   <c:function name='PageUrl' as='string' visibility='public'>
+      <c:param name='queryResults' as='WebQueryResults'/>
+      <c:param name='pageNumber' as='int'/>
+      <c:param name='urlPath' value='null' as='string'/>
+
+      <c:script>
+         <![CDATA[
+
+         if (queryResults.TotalCount != null
+            && pageNumber > queryResults.NumberOfPages) {
+
+            return null;
+         }
+
+         return queryResults.QueryParameters.GetPageUrl(pageNumber, urlPath);
+         ]]>
+      </c:script>
+   </c:function>
+
+</c:package>
