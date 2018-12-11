@@ -191,7 +191,7 @@ Renders an HTML table using the type's metadata. It supports filtering, sorting 
 
 <details>
 <summary>Preview:</summary>
-<img src="docs/img/wqt-table-demo.gif"/>
+<img src="docs/img/wqt-table-demo.gif" width="600"/>
 </details>
 
 For example, using `c:type` (although you can also do it in plain C# using data annotations):
