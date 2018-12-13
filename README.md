@@ -58,7 +58,7 @@ WebQueryParameters has three main properties: OrderBy, Skip and Top. In the abov
 
 Now you can use queryParams to query your database:
 
-```charp
+```csharp
 var set = db.Table<Product>();
 
 int totalCount = set.Count();
