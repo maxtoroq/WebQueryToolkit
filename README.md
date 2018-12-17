@@ -254,7 +254,7 @@ if (filters.IsAbstract != null) {
             
 var queryResults = new WebQueryResults<TypeEntry>(
    // OrderBy(string) is possible with System.Linq.Dynamic
-   filteredSet.OrderBy(queryParams.OrderBy + $", {nameof(Type.Name)}")
+   filteredSet.OrderBy($"{queryParams.OrderBy}, {nameof(Type.Name)}")
       .Skip(queryParams.Skip)
       .Take(queryParams.Top.Value)
       .Select(t => new TypeEntry { Name = t.Name, Namespace = t.Namespace, IsAbstract = t.IsAbstract }),
