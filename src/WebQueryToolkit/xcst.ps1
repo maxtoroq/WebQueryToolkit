@@ -13,7 +13,7 @@ function GeneratePackages {
    $onAssemblyResolve = [ResolveEventHandler] {
       param($sender, $e)
 
-      $assemblyName = $e.Name.Substring(0, $e.Name.IndexOf(","))
+      $assemblyName = $e.Name.Split(',')[0]
       $assemblyPath = "$nugetPackages\$assemblyName.*\lib\net46\$assemblyName.dll"
 
       if ($assemblyName.StartsWith("saxon9he") -or $assemblyName.StartsWith("IKVM.")) {
@@ -21,6 +21,10 @@ function GeneratePackages {
 
       } elseif ($assemblyName.StartsWith("Newtonsoft.Json")) {
          $assemblyPath = "$nugetPackages\$assemblyName.*\lib\net45\$assemblyName.dll"
+      }
+
+      if (-not (Test-Path $assemblyPath)) {
+         return $null
       }
 
       return [Reflection.Assembly]::LoadFrom((Resolve-Path $assemblyPath))
@@ -35,9 +39,9 @@ function GeneratePackages {
 
       # Enable Application Extension
 
-      Add-Type -Path $nugetPackages\Xcst.AspNet.*\lib\net46\Xcst.AspNet.dll
+      $xcstAspNet = [Reflection.Assembly]::LoadFrom((Resolve-Path $nugetPackages\Xcst.AspNet.*\lib\net46\Xcst.AspNet.dll))
       $compilerFactory.EnableExtensions = $true
-      [Xcst.Compiler.ApplicationExtensionConfiguration]::RegisterApplicationExtension($compilerFactory)
+      $compilerFactory.RegisterExtensionsForAssembly($xcstAspNet)
 
 @"
 //------------------------------------------------------------------------------

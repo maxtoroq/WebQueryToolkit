@@ -20,11 +20,17 @@
    typeof(WebQueryToolkit.PreApplicationStartCode),
    nameof(WebQueryToolkit.PreApplicationStartCode.Start))]
 
+[assembly: Xcst.Compiler.XcstExtension(
+   "http://maxtoroq.github.io/WebQueryToolkit",
+   typeof(WebQueryToolkit.ExtensionLoader))]
+
 namespace WebQueryToolkit {
 
    using System;
    using System.ComponentModel;
+   using System.IO;
    using System.Linq;
+   using Xcst.Compiler;
    using Xcst.Web.Configuration;
 
    [EditorBrowsable(EditorBrowsableState.Never)]
@@ -119,6 +125,15 @@ namespace WebQueryToolkit {
       }
    }
 
+   class ExtensionLoader : XcstExtensionLoader {
+
+      public override Stream LoadSource() {
+
+         return typeof(ExtensionLoader).Assembly
+            .GetManifestResourceStream($"{nameof(WebQueryToolkit)}.WebQueryToolkit.xsl");
+      }
+   }
+
    /// <exclude/>
 
    [EditorBrowsable(EditorBrowsableState.Never)]
@@ -132,13 +147,9 @@ namespace WebQueryToolkit {
 
             startWasCalled = true;
 
-            var config = XcstWebConfiguration.Instance;
-
-            config.CompilerFactory.RegisterExtension(
-               new Uri("http://maxtoroq.github.io/WebQueryToolkit"),
-               () => typeof(PreApplicationStartCode).Assembly
-                  .GetManifestResourceStream($"{nameof(WebQueryToolkit)}.WebQueryToolkit.xsl")
-            );
+            XcstWebConfiguration.Instance
+               .CompilerFactory
+               .RegisterExtensionsForAssembly(typeof(PreApplicationStartCode).Assembly);
          }
       }
    }
