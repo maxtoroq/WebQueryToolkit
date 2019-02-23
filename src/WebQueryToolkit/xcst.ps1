@@ -39,7 +39,7 @@ function GeneratePackages {
 
       # Enable Application Extension
 
-      $xcstAspNet = [Reflection.Assembly]::LoadFrom((Resolve-Path $nugetPackages\Xcst.AspNet.*\lib\net46\Xcst.AspNet.dll))
+      $xcstAspNet = [Reflection.Assembly]::LoadFrom((Resolve-Path $nugetPackages\Xcst.AspNet.Compilation.*\lib\net46\Xcst.AspNet.Compilation.dll))
       $compilerFactory.EnableExtensions = $true
       $compilerFactory.RegisterExtensionsForAssembly($xcstAspNet)
 

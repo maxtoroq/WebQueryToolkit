@@ -31,7 +31,7 @@ namespace WebQueryToolkit {
    using System.IO;
    using System.Linq;
    using Xcst.Compiler;
-   using Xcst.Web.Configuration;
+   using Xcst.Web.Compilation;
 
    [EditorBrowsable(EditorBrowsableState.Never)]
    [AttributeUsage(AttributeTargets.Class)]
@@ -147,9 +147,7 @@ namespace WebQueryToolkit {
 
             startWasCalled = true;
 
-            XcstWebConfiguration.Instance
-               .CompilerFactory
-               .RegisterExtensionsForAssembly(typeof(PreApplicationStartCode).Assembly);
+            PageBuildProvider.CompilerFactory.RegisterExtensionsForAssembly(typeof(PreApplicationStartCode).Assembly);
          }
       }
    }
