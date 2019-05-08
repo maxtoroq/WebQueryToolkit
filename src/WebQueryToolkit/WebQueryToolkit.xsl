@@ -18,7 +18,8 @@
    xmlns="http://www.w3.org/1999/XSL/Transform"
    xmlns:xs="http://www.w3.org/2001/XMLSchema"
    xmlns:c="http://maxtoroq.github.io/XCST"
-   xmlns:xcst="http://maxtoroq.github.io/XCST/syntax"
+   xmlns:xcst="http://maxtoroq.github.io/XCST/grammar"
+   xmlns:code="http://maxtoroq.github.io/XCST/code"
    xmlns:src="http://maxtoroq.github.io/XCST/compiled"
    xmlns:wqt="http://maxtoroq.github.io/WebQueryToolkit">
 
@@ -33,7 +34,7 @@
       <param name="modules" tunnel="yes"/>
 
       <variable name="defs" select="for $m in reverse($modules) return $m/wqt:web-query"/>
-      <variable name="setters" as="text()*">
+      <variable name="setters" as="element()*">
          <apply-templates select="@wqt:order-by" mode="wqt:setter"/>
          <apply-templates select="(for $d in $defs return $d/@top)[1]" mode="wqt:setter"/>
          <apply-templates select="(for $d in $defs return $d/@top-max)[1]" mode="wqt:setter"/>
@@ -49,36 +50,50 @@
          <apply-templates select="(for $d in (., $defs) return $d/@skip-parameter-allowed)[1]" mode="wqt:setter"/>
          <apply-templates select="(for $d in (., $defs) return $d/@top-parameter-allowed)[1]" mode="wqt:setter"/>
       </variable>
-      <c:metadata name="{src:global-identifier('WebQueryToolkit.WebQueryable')}">
-         <variable name="setters-str" select="string-join($setters, ', ')"/>
-         <if test="$setters-str">
-            <attribute name="value" select="$setters-str"/>
-         </if>
-      </c:metadata>
+      <code:attribute>
+         <code:type-reference name="WebQueryable" namespace="WebQueryToolkit"/>
+         <code:initializer>
+            <sequence select="$setters"/>
+         </code:initializer>
+      </code:attribute>
    </template>
 
    <template match="@wqt:order-by" mode="wqt:setter">
-      <value-of select="'OrderBy', src:verbatim-string(string())" separator=" = "/>
+      <code:member-initializer name="OrderBy">
+         <code:string verbatim="true">
+            <value-of select="."/>
+         </code:string>
+      </code:member-initializer>
    </template>
 
    <template match="@order-by-parameter-allowed" mode="wqt:setter">
-      <value-of select="'OrderByParameterAllowed', src:boolean(xcst:boolean(.))" separator=" = "/>
+      <code:member-initializer name="OrderByParameterAllowed">
+         <code:bool value="{xcst:boolean(.)}"/>
+      </code:member-initializer>
    </template>
 
    <template match="@skip-parameter-allowed" mode="wqt:setter">
-      <value-of select="'SkipParameterAllowed', src:boolean(xcst:boolean(.))" separator=" = "/>
+      <code:member-initializer name="SkipParameterAllowed">
+         <code:bool value="{xcst:boolean(.)}"/>
+      </code:member-initializer>
    </template>
 
    <template match="@top-parameter-allowed" mode="wqt:setter">
-      <value-of select="'TopParameterAllowed', src:boolean(xcst:boolean(.))" separator=" = "/>
+      <code:member-initializer name="TopParameterAllowed">
+         <code:bool value="{xcst:boolean(.)}"/>
+      </code:member-initializer>
    </template>
 
    <template match="@top" mode="wqt:setter">
-      <value-of select="'Top', src:integer(xcst:integer(.))" separator=" = "/>
+      <code:member-initializer name="Top">
+         <code:int value="{xcst:integer(.)}"/>
+      </code:member-initializer>
    </template>
 
    <template match="@top-max" mode="wqt:setter">
-      <value-of select="'TopMax', src:integer(xcst:integer(.))" separator=" = "/>
+      <code:member-initializer name="TopMax">
+         <code:int value="{xcst:integer(.)}"/>
+      </code:member-initializer>
    </template>
 
    <template name="wqt:array-setter">
@@ -86,8 +101,18 @@
       <param name="values" as="item()*" required="yes"/>
 
       <if test="not(empty($values))">
-         <variable name="strings" select="for $v in $values return src:verbatim-string($v)"/>
-         <value-of select="$name, concat('new[] { ', string-join($strings, ', '), ' }')" separator=" = "/>
+         <code:member-initializer name="{$name}">
+            <code:new-array>
+               <code:type-reference name="String" namespace="System"/>
+               <code:collection-initializer>
+                  <for-each select="$values">
+                     <code:string verbatim="true">
+                        <value-of select="."/>
+                     </code:string>
+                  </for-each>
+               </code:collection-initializer>
+            </code:new-array>
+         </code:member-initializer>
       </if>
    </template>
 
