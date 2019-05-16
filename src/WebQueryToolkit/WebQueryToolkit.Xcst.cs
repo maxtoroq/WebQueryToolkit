@@ -80,7 +80,6 @@ namespace WebQueryToolkit {
       /// <summary>
       /// Creates <see cref="WebQuerySettings"/> for the provided annotated <paramref name="type"/>.
       /// </summary>
-
       public static WebQuerySettings ForType(Type type) {
 
          if (type == null) throw new ArgumentNullException(nameof(type));
@@ -116,7 +115,6 @@ namespace WebQueryToolkit {
       /// Converts a function delegate to the appropiate type expected
       /// by the table (grid) control.
       /// </summary>
-
       public Func<object, string> rowUrlFn(Func<TResult, string> urlFn) {
 
          if (urlFn == null) throw new ArgumentNullException(nameof(urlFn));
@@ -135,7 +133,6 @@ namespace WebQueryToolkit {
    }
 
    /// <exclude/>
-
    [EditorBrowsable(EditorBrowsableState.Never)]
    public static class PreApplicationStartCode {
 
