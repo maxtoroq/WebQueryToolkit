@@ -40,21 +40,30 @@ namespace WebQueryToolkit {
       int _Top, _TopMax;
       internal bool topSet, topMaxSet;
 
-      public string[] FilterAllowedProperties { get; set; }
+      public string[]
+         FilterAllowedProperties { get; set; }
 
-      public string OrderBy { get; set; }
+      public string
+         OrderBy { get; set; }
 
-      public string[] OrderByAllowedProperties { get; set; }
+      public string[]
+         OrderByAllowedProperties { get; set; }
 
-      public bool OrderByParameterAllowed { get; set; }
+      public bool
+         OrderByParameterAllowed { get; set; }
 
-      public string OrderByParameterName { get; set; }
+      public string
+         OrderByParameterName { get; set; }
 
-      public bool SkipParameterAllowed { get; set; }
+      public bool
+         SkipParameterAllowed { get; set; }
 
-      public string SkipParameterName { get; set; }
+      public string
+         SkipParameterName { get; set; }
 
-      public int Top {
+      public int
+         Top {
+
          get => _Top;
          set {
             _Top = value;
@@ -62,7 +71,9 @@ namespace WebQueryToolkit {
          }
       }
 
-      public int TopMax {
+      public int
+         TopMax {
+
          get => _TopMax;
          set {
             _TopMax = value;
@@ -70,9 +81,11 @@ namespace WebQueryToolkit {
          }
       }
 
-      public bool TopParameterAllowed { get; set; }
+      public bool
+         TopParameterAllowed { get; set; }
 
-      public string TopParameterName { get; set; }
+      public string
+         TopParameterName { get; set; }
    }
 
    partial class WebQuerySettings {
@@ -80,7 +93,8 @@ namespace WebQueryToolkit {
       /// <summary>
       /// Creates <see cref="WebQuerySettings"/> for the provided annotated <paramref name="type"/>.
       /// </summary>
-      public static WebQuerySettings ForType(Type type) {
+      public static WebQuerySettings
+         ForType(Type type) {
 
          if (type == null) throw new ArgumentNullException(nameof(type));
 
@@ -115,7 +129,8 @@ namespace WebQueryToolkit {
       /// Converts a function delegate to the appropiate type expected
       /// by the table (grid) control.
       /// </summary>
-      public Func<object, string> rowUrlFn(Func<TResult, string> urlFn) {
+      public Func<object, string>
+         rowUrlFn(Func<TResult, string> urlFn) {
 
          if (urlFn == null) throw new ArgumentNullException(nameof(urlFn));
 
@@ -125,7 +140,8 @@ namespace WebQueryToolkit {
 
    class ExtensionLoader : XcstExtensionLoader {
 
-      public override Stream LoadSource() {
+      public override Stream
+         LoadSource() {
 
          return typeof(ExtensionLoader).Assembly
             .GetManifestResourceStream($"{nameof(WebQueryToolkit)}.WebQueryToolkit.xsl");
@@ -138,13 +154,15 @@ namespace WebQueryToolkit {
 
       static bool startWasCalled;
 
-      public static void Start() {
+      public static void
+         Start() {
 
          if (!startWasCalled) {
 
             startWasCalled = true;
 
-            PageBuildProvider.CompilerFactory.RegisterExtensionsForAssembly(typeof(PreApplicationStartCode).Assembly);
+            PageBuildProvider.CompilerFactory
+               .RegisterExtensionsForAssembly(typeof(PreApplicationStartCode).Assembly);
          }
       }
    }
