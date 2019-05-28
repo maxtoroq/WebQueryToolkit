@@ -37,33 +37,35 @@ namespace WebQueryToolkit {
    [AttributeUsage(AttributeTargets.Class)]
    public class WebQueryableAttribute : Attribute {
 
-      int _Top, _TopMax;
-      internal bool topSet, topMaxSet;
+      int
+      _Top, _TopMax;
+
+      internal bool
+      topSet, topMaxSet;
 
       public string[]
-         FilterAllowedProperties { get; set; }
+      FilterAllowedProperties { get; set; }
 
       public string
-         OrderBy { get; set; }
+      OrderBy { get; set; }
 
       public string[]
-         OrderByAllowedProperties { get; set; }
+      OrderByAllowedProperties { get; set; }
 
       public bool
-         OrderByParameterAllowed { get; set; }
+      OrderByParameterAllowed { get; set; }
 
       public string
-         OrderByParameterName { get; set; }
+      OrderByParameterName { get; set; }
 
       public bool
-         SkipParameterAllowed { get; set; }
+      SkipParameterAllowed { get; set; }
 
       public string
-         SkipParameterName { get; set; }
+      SkipParameterName { get; set; }
 
       public int
-         Top {
-
+      Top {
          get => _Top;
          set {
             _Top = value;
@@ -72,8 +74,7 @@ namespace WebQueryToolkit {
       }
 
       public int
-         TopMax {
-
+      TopMax {
          get => _TopMax;
          set {
             _TopMax = value;
@@ -82,10 +83,10 @@ namespace WebQueryToolkit {
       }
 
       public bool
-         TopParameterAllowed { get; set; }
+      TopParameterAllowed { get; set; }
 
       public string
-         TopParameterName { get; set; }
+      TopParameterName { get; set; }
    }
 
    partial class WebQuerySettings {
@@ -94,7 +95,7 @@ namespace WebQueryToolkit {
       /// Creates <see cref="WebQuerySettings"/> for the provided annotated <paramref name="type"/>.
       /// </summary>
       public static WebQuerySettings
-         ForType(Type type) {
+      ForType(Type type) {
 
          if (type == null) throw new ArgumentNullException(nameof(type));
 
@@ -130,7 +131,7 @@ namespace WebQueryToolkit {
       /// by the table (grid) control.
       /// </summary>
       public Func<object, string>
-         rowUrlFn(Func<TResult, string> urlFn) {
+      rowUrlFn(Func<TResult, string> urlFn) {
 
          if (urlFn == null) throw new ArgumentNullException(nameof(urlFn));
 
@@ -141,7 +142,7 @@ namespace WebQueryToolkit {
    class ExtensionLoader : XcstExtensionLoader {
 
       public override Stream
-         LoadSource() {
+      LoadSource() {
 
          return typeof(ExtensionLoader).Assembly
             .GetManifestResourceStream($"{nameof(WebQueryToolkit)}.WebQueryToolkit.xsl");
@@ -152,10 +153,11 @@ namespace WebQueryToolkit {
    [EditorBrowsable(EditorBrowsableState.Never)]
    public static class PreApplicationStartCode {
 
-      static bool startWasCalled;
+      static bool
+      startWasCalled;
 
       public static void
-         Start() {
+      Start() {
 
          if (!startWasCalled) {
 

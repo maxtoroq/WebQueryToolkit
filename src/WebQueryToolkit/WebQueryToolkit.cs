@@ -36,68 +36,68 @@ namespace WebQueryToolkit {
       /// to auto-generate filters for, where the name of the property is used as parameter name.
       /// </remarks>
       public ISet<string>
-         FilterAllowedProperties { get; }
+      FilterAllowedProperties { get; }
 
       /// <summary>
       /// The default sort expression, or <code>null</code> if no default was specified.
       /// </summary>
       public string/*?*/
-         OrderBy { get; }
+      OrderBy { get; }
 
       /// <summary>
       /// The properties that are allowed to sort by. Empty means any property is allowed.
       /// </summary>
       public ISet<string>
-         OrderByAllowedProperties { get; }
+      OrderByAllowedProperties { get; }
 
       /// <summary>
       /// <code>true</code> if the *orderby* parameter is allowed on the query string.
       /// </summary>
       public bool
-         OrderByParameterAllowed { get; }
+      OrderByParameterAllowed { get; }
 
       /// <summary>
       /// The *orderby* parameter name. The default is "$orderby".
       /// </summary>
       public string
-         OrderByParameterName { get; } = "$orderby";
+      OrderByParameterName { get; } = "$orderby";
 
       /// <summary>
       /// <code>true</code> if the *skip* (page start) parameter is allowed on the query string.
       /// </summary>
       public bool
-         SkipParameterAllowed { get; }
+      SkipParameterAllowed { get; }
 
       /// <summary>
       /// The *skip* (page start) parameter name. The default is "$skip".
       /// </summary>
       public string
-         SkipParameterName { get; } = "$skip";
+      SkipParameterName { get; } = "$skip";
 
       /// <summary>
       /// The default *top* (page size) value, or <code>null</code> if no default was specified.
       /// </summary>
       public int?
-         Top { get; }
+      Top { get; }
 
       /// <summary>
       /// The max. allowed *top* (page size) value, or <code>null</code> if any value is allowed.
       /// Restricts the value that can be specified on the query string.
       /// </summary>
       public int?
-         TopMax { get; }
+      TopMax { get; }
 
       /// <summary>
       /// <code>true</code> if the *top* (page size) parameter is allowed on the query string.
       /// </summary>
       public bool
-         TopParameterAllowed { get; }
+      TopParameterAllowed { get; }
 
       /// <summary>
       /// The *top* (page size) parameter name. The default is "$top".
       /// </summary>
       public string
-         TopParameterName { get; } = "$top";
+      TopParameterName { get; } = "$top";
 
       /// <summary>
       /// Initializes a <see cref="WebQuerySettings"/> instance. All parameters are optional.
@@ -127,7 +127,7 @@ namespace WebQueryToolkit {
       /// </param>
       /// <param name="topParameterName"><code>"$top"</code> is the default.</param>
       public
-         WebQuerySettings(
+      WebQuerySettings(
             string[] filterAllowedProperties = null,
 
             string orderBy = null,
@@ -178,39 +178,40 @@ namespace WebQueryToolkit {
    /// </summary>
    public class WebQueryParameters {
 
-      readonly NameValueCollection/*?*/ urlQuery;
+      readonly NameValueCollection/*?*/
+      urlQuery;
 
       /// <summary>
       /// The original URL. Used by <see cref="GetPageUrl"/> and <see cref="GetSortUrl"/>.
       /// </summary>
       public Uri
-         Url { get; }
+      Url { get; }
 
       /// <summary>
       /// The value of the *orderby* parameter if allowed/present,
       /// or the default value, or <code>null</code>.
       /// </summary>
       public string/*?*/
-         OrderBy { get; }
+      OrderBy { get; }
 
       /// <summary>
       /// The value of the *skip* (page start) parameter if allowed/present, or 0.
       /// </summary>
       public int
-         Skip { get; }
+      Skip { get; }
 
       /// <summary>
       /// The value of the *top* (page size) parameter if allowed/present,
       /// or the default value, or <code>null</code>.
       /// </summary>
       public int?
-         Top { get; }
+      Top { get; }
 
       /// <summary>
       /// The query settings that were used to create this instance.
       /// </summary>
       public WebQuerySettings
-         Settings { get; }
+      Settings { get; }
 
       /// <summary>
       /// <code>true</code> if pagination is enabled
@@ -218,9 +219,9 @@ namespace WebQueryToolkit {
       /// from the parameter or from a default value).
       /// </summary>
       public bool
-         PaginationEnabled =>
-            Settings.SkipParameterAllowed
-               && Top != null;
+      PaginationEnabled =>
+         Settings.SkipParameterAllowed
+            && Top != null;
 
       /// <summary>
       /// Creates a <see cref="WebQueryParameters"/> instance by parsing the provided query string,
@@ -233,7 +234,7 @@ namespace WebQueryToolkit {
       /// <param name="errorMessage">Used when a parameter is not allowed or out of range.</param>
       /// <returns><code>true</code> if <paramref name="parameters"/> is set to a new instance.</returns>
       public static bool
-         TryCreate(Uri url, NameValueCollection urlQuery, WebQuerySettings settings, out WebQueryParameters/*?*/ parameters, out string/*?*/ errorMessage) {
+      TryCreate(Uri url, NameValueCollection urlQuery, WebQuerySettings settings, out WebQueryParameters/*?*/ parameters, out string/*?*/ errorMessage) {
 
          if (url == null) throw new ArgumentNullException(nameof(url));
          if (urlQuery == null) throw new ArgumentNullException(nameof(urlQuery));
@@ -331,7 +332,7 @@ namespace WebQueryToolkit {
       }
 
       static int?
-         Int32NonNegativeValue(string[] values, string parameterName, out string/*?*/ errorMessage) {
+      Int32NonNegativeValue(string[] values, string parameterName, out string/*?*/ errorMessage) {
 
          int? value;
 
@@ -348,7 +349,7 @@ namespace WebQueryToolkit {
       }
 
       static int?
-         Int32Value(string[] values, string parameterName, out string/*?*/ errorMessage) {
+      Int32Value(string[] values, string parameterName, out string/*?*/ errorMessage) {
 
          string str;
 
@@ -367,7 +368,7 @@ namespace WebQueryToolkit {
       }
 
       static string/*?*/
-         NonWhiteSpaceSingleValue(string[] values, string parameterName, out string/*?*/ errorMessage) {
+      NonWhiteSpaceSingleValue(string[] values, string parameterName, out string/*?*/ errorMessage) {
 
          if (values.Length > 1) {
             errorMessage = parameterName + " parameter cannot be specified more than once.";
@@ -393,7 +394,7 @@ namespace WebQueryToolkit {
       /// <param name="url">The original URL.</param>
       /// <param name="urlQuery">The original query string.</param>
       public
-         WebQueryParameters(
+      WebQueryParameters(
             Uri url,
             NameValueCollection urlQuery/*?*/,
             WebQuerySettings settings,
@@ -426,7 +427,7 @@ namespace WebQueryToolkit {
       /// </param>
       /// <returns>The URL for a specific page.</returns>
       public string/*?*/
-         GetPageUrl(int pageNumber, string urlPath = null) {
+      GetPageUrl(int pageNumber, string urlPath = null) {
 
          if (!this.PaginationEnabled
             || pageNumber <= 0) {
@@ -460,7 +461,7 @@ namespace WebQueryToolkit {
       /// </param>
       /// <returns>The URL for a specific sort value.</returns>
       public string/*?*/
-         GetSortUrl(string sortParam, string urlPath = null) {
+      GetSortUrl(string sortParam, string urlPath = null) {
 
          if (sortParam == null) throw new ArgumentNullException(nameof(sortParam));
 
@@ -491,7 +492,7 @@ namespace WebQueryToolkit {
       }
 
       string/*?*/
-         GetUrlPath() {
+      GetUrlPath() {
 
          if (this.Url == null) {
             return null;
@@ -512,7 +513,7 @@ namespace WebQueryToolkit {
       }
 
       NameValueCollection
-         GetUrlQuery() {
+      GetUrlQuery() {
 
          return (this.urlQuery != null) ?
             new NameValueCollection(this.urlQuery)
@@ -525,7 +526,7 @@ namespace WebQueryToolkit {
       /// <param name="name">The name of the parameter to check.</param>
       /// <returns>true if the query string contains the parameter.</returns>
       public bool
-         HasQueryParam(string name) {
+      HasQueryParam(string name) {
 
          if (name == null) throw new ArgumentNullException(nameof(name));
 
@@ -544,7 +545,7 @@ namespace WebQueryToolkit {
       /// <param name="includeDelimiter"><code>true</code> to include the "?" prefix.</param>
       /// <returns>A query string.</returns>
       public static string
-         ToQueryString(NameValueCollection qs, bool includeDelimiter) {
+      ToQueryString(NameValueCollection qs, bool includeDelimiter) {
 
          if (qs == null) throw new ArgumentNullException(nameof(qs));
 
@@ -599,34 +600,34 @@ namespace WebQueryToolkit {
       /// This property is computed after enumerating.
       /// </summary>
       public abstract int
-         Count { get; }
+      Count { get; }
 
       /// <summary>
       /// The number of all elements of the current query, if available.
       /// </summary>
       public int?
-         TotalCount { get; }
+      TotalCount { get; }
 
       /// <summary>
       /// The query parameters used to obtain pagination information.
       /// </summary>
       public WebQueryParameters/*?*/
-         QueryParameters { get; }
+      QueryParameters { get; }
 
       /// <summary>
       /// The total number of pages, or 0 if pagination is not enabled.
       /// </summary>
       public int
-         NumberOfPages { get; }
+      NumberOfPages { get; }
 
       /// <summary>
       /// The 1-based number of the current page, or 0 if pagination is not enabled.
       /// </summary>
       public int
-         CurrentPage { get; }
+      CurrentPage { get; }
 
       protected
-         WebQueryResults(int? totalCount, WebQueryParameters/*?*/ queryParameters) {
+      WebQueryResults(int? totalCount, WebQueryParameters/*?*/ queryParameters) {
 
          this.TotalCount = totalCount;
          this.QueryParameters = queryParameters;
@@ -645,10 +646,10 @@ namespace WebQueryToolkit {
       }
 
       public IEnumerator
-         GetEnumerator() => BaseGetEnumerator();
+      GetEnumerator() => BaseGetEnumerator();
 
       protected abstract IEnumerator
-         BaseGetEnumerator();
+      BaseGetEnumerator();
    }
 
    /// <summary>
@@ -656,17 +657,21 @@ namespace WebQueryToolkit {
    /// </summary>
    public partial class WebQueryResults<TResult> : WebQueryResults, IEnumerable<TResult> {
 
-      readonly IEnumerable<TResult> results;
-      int count;
-      bool countComputed;
+      readonly IEnumerable<TResult>
+      results;
+
+      int
+      count;
+
+      bool
+      countComputed;
 
       /// <summary>
       /// The number of elements of the current page.
       /// This property is computed after enumerating.
       /// </summary>
       public override int
-         Count {
-
+      Count {
          get {
             if (results is ICollection<TResult> col) {
                return col.Count;
@@ -684,7 +689,7 @@ namespace WebQueryToolkit {
       /// <param name="totalCount">The total number of elements of the query.</param>
       /// <param name="queryParameters">The query parameters.</param>
       public
-         WebQueryResults(
+      WebQueryResults(
             IEnumerable<TResult> results,
             int? totalCount = null,
             WebQueryParameters queryParameters = null) : base(totalCount, queryParameters) {
@@ -695,7 +700,7 @@ namespace WebQueryToolkit {
       }
 
       public new IEnumerator<TResult>
-         GetEnumerator() {
+      GetEnumerator() {
 
          if (this.TotalCount == null
             || this.TotalCount > 0) {
@@ -710,7 +715,7 @@ namespace WebQueryToolkit {
       }
 
       protected override IEnumerator
-         BaseGetEnumerator() => GetEnumerator();
+      BaseGetEnumerator() => GetEnumerator();
    }
 
    /// <summary>
@@ -724,7 +729,7 @@ namespace WebQueryToolkit {
       /// from <paramref name="request"/>.
       /// </summary>
       public static bool
-         TryCreateWebQueryParameters(
+      TryCreateWebQueryParameters(
             this HttpRequestBase request,
             WebQuerySettings settings,
             out WebQueryParameters/*?*/ parameters) {
@@ -742,7 +747,7 @@ namespace WebQueryToolkit {
       /// Fluent helper to create <see cref="WebQueryResults{TResult}"/> instances.
       /// </summary>
       public static WebQueryResults<TResult>
-         ToWebQueryResults<TResult>(
+      ToWebQueryResults<TResult>(
             this IEnumerable<TResult> source,
             int? totalCount = null,
             WebQueryParameters queryParameters = null) {
@@ -758,7 +763,7 @@ namespace WebQueryToolkit {
       /// Fluent helper to create <see cref="WebQueryResults{TResult}"/> instances.
       /// </summary>
       public static WebQueryResults<TResult>
-         ToWebQueryResults<TResult>(
+      ToWebQueryResults<TResult>(
             this IEnumerable<TResult> source,
             WebQueryParameters/*?*/ queryParameters) {
 
