@@ -122,7 +122,7 @@
          <c:if test='tableId != null'>
             <c:attribute name='id' value='tableId'/>
          </c:if>
-         <c:attribute name='class' value='new[] { "table table-striped wqt-table", tableClass }'/>
+         <c:attribute name='class' value='new[] { "table wqt-table", tableClass }'/>
          <c:call-template name='table-first-extra'/>
          <thead>
             <tr>

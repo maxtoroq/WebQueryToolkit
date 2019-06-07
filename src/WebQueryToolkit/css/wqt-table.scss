@@ -15,9 +15,11 @@
 table.wqt-table {
 
    > thead {
+      background-color: rgba(255, 255, 255, .85);
 
       th {
          cursor: default;
+         font-size: .9em;
 
          &.sortable {
 
@@ -25,7 +27,7 @@ table.wqt-table {
                content: "↑";
                visibility: hidden;
                font-family: Arial, sans-serif;
-               font-size: 80%;
+               font-size: .8em;
                margin-left: .2em;
             }
 
@@ -81,7 +83,6 @@ table.wqt-table {
 
             > div {
                position: relative;
-               background-color: inherit;
             }
 
             > div,
@@ -107,8 +108,7 @@ table.wqt-table {
                -moz-box-sizing: border-box;
                box-sizing: border-box;
                outline: none;
-               background-color: inherit;
-               background-color: transparent\9;
+               background-color: transparent;
                font-family: inherit;
                -webkit-box-shadow: none;
                -moz-box-shadow: none;
@@ -143,12 +143,13 @@ table.wqt-table {
    }
 
    > tbody {
+      background-color: rgba(242, 245, 245, .8);
 
       > tr[onclick] {
          cursor: pointer;
 
-         &:not(.selected):hover > td {
-            background-color: #d9edf7;
+         &:not(.selected):hover {
+            background-color: rgba(228, 233, 233, .8);
          }
       }
 
