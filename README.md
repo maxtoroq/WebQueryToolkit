@@ -441,8 +441,9 @@ The table control uses a CSS technique to truncate long text. You can disable th
    <c:override>
       <c:function name='TableCellTruncate' as='bool'>
          <c:param name='cell' as='ModelMetadata'/>
-
-         <c:return value='false'/>
+         
+         <!-- Disable for specific column -->
+         <c:return value='(cell.PropertyName == "Foo") ? false : __xcst.original(cell)'/>
       </c:function>
    </c:override>
 </c:use-package>
