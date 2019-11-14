@@ -100,7 +100,7 @@
       <param name="name" as="xs:string" required="yes"/>
       <param name="values" as="item()*" required="yes"/>
 
-      <if test="exists($values)">
+      <if test="not(empty($values))">
          <code:member-initializer name="{$name}">
             <code:new-array>
                <code:type-reference name="String" namespace="System"/>

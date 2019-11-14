@@ -16,22 +16,11 @@
  * If you don't use WebQueryPackage you can ignore or remove.
  */
 
-[assembly: System.Web.PreApplicationStartMethod(
-   typeof(WebQueryToolkit.PreApplicationStartCode),
-   nameof(WebQueryToolkit.PreApplicationStartCode.Start))]
-
-[assembly: Xcst.Compiler.XcstExtension(
-   "http://maxtoroq.github.io/WebQueryToolkit",
-   typeof(WebQueryToolkit.ExtensionLoader))]
-
 namespace WebQueryToolkit {
 
    using System;
    using System.ComponentModel;
-   using System.IO;
    using System.Linq;
-   using Xcst.Compiler;
-   using Xcst.Web.Compilation;
 
    [EditorBrowsable(EditorBrowsableState.Never)]
    [AttributeUsage(AttributeTargets.Class)]
@@ -136,36 +125,6 @@ namespace WebQueryToolkit {
          if (urlFn == null) throw new ArgumentNullException(nameof(urlFn));
 
          return o => urlFn((TResult)o);
-      }
-   }
-
-   class ExtensionLoader : XcstExtensionLoader {
-
-      public override Stream
-      LoadSource() {
-
-         return typeof(ExtensionLoader).Assembly
-            .GetManifestResourceStream($"{nameof(WebQueryToolkit)}.WebQueryToolkit.xsl");
-      }
-   }
-
-   /// <exclude/>
-   [EditorBrowsable(EditorBrowsableState.Never)]
-   public static class PreApplicationStartCode {
-
-      static bool
-      startWasCalled;
-
-      public static void
-      Start() {
-
-         if (!startWasCalled) {
-
-            startWasCalled = true;
-
-            PageBuildProvider.CompilerFactory
-               .RegisterExtensionsForAssembly(typeof(PreApplicationStartCode).Assembly);
-         }
       }
    }
 }

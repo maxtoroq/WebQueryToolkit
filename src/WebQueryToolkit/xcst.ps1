@@ -8,8 +8,7 @@ function GeneratePackages {
    $pkgFileExtension = "xcst"
    $nugetPackages = Resolve-Path ..\..\packages
 
-   # AssemblyResolve is used to enable loading newer versions of Xcst.Compiler's dependencies
-
+   # AssemblyResolve is used to enable loading **newer versions** of Xcst.Compiler's dependencies
    $onAssemblyResolve = [ResolveEventHandler] {
       param($sender, $e)
 
@@ -36,12 +35,11 @@ function GeneratePackages {
       Add-Type -Path $nugetPackages\Xcst.Compiler.*\lib\net46\Xcst.Compiler.dll
 
       $compilerFactory = New-Object Xcst.Compiler.XcstCompilerFactory
-
-      # Enable Application Extension
-
-      $xcstAspNet = [Reflection.Assembly]::LoadFrom((Resolve-Path $nugetPackages\Xcst.AspNet.Compilation.*\lib\net46\Xcst.AspNet.Compilation.dll))
       $compilerFactory.EnableExtensions = $true
-      $compilerFactory.RegisterExtensionsForAssembly($xcstAspNet)
+
+      # Enable "application" extension
+      $appExtension = [Reflection.Assembly]::LoadFrom((Resolve-Path $nugetPackages\Xcst.AspNet.Extension.*\lib\net46\Xcst.AspNet.Extension.dll))
+      $compilerFactory.RegisterExtensionsForAssembly($appExtension)
 
 @"
 //------------------------------------------------------------------------------
@@ -68,9 +66,7 @@ function GeneratePackages {
 
          $xcstResult = $compiler.Compile((New-Object Uri $file.FullName))
 
-         foreach ($src in $xcstResult.CompilationUnits) {
-            write $src
-         }
+         $xcstResult.CompilationUnits | %{ write $_ }
       }
    } finally {
       # Detach the event handler (not detaching can lead to stack overflow issues when closing PS)
