@@ -128,7 +128,7 @@
             <tr>
                <th/>
                <c:for-each name='col' in='columns'>
-                  <c:call-template name='table-column'>
+                  <c:call-template name='table-column-header'>
                      <c:with-param name='col' value='col'/>
                   </c:call-template>
                </c:for-each>
@@ -162,7 +162,7 @@
    <c:template name='table-body-extra' visibility='public'/>
    <c:template name='table-foot-extra' visibility='public'/>
 
-   <c:template name='table-column' visibility='public'>
+   <c:template name='table-column-header' visibility='public'>
       <c:param name='col' as='ModelMetadata' required='yes'/>
       <c:param name='colClassFn' as='Func&lt;ModelMetadata, string>' tunnel='yes'/>
       <c:param name='colSortUrlFn' as='Func&lt;ModelMetadata, string>' tunnel='yes'/>
@@ -170,7 +170,7 @@
       <c:variable name='cssClass' value='colClassFn(col)'/>
       <c:variable name='url' value='colSortUrlFn(col)'/>
 
-      <th title='{col.GetDisplayName()}'>
+      <th scope='col' title='{col.GetDisplayName()}'>
          <c:if test='!string.IsNullOrEmpty(cssClass)'>
             <c:attribute name='class' value='cssClass'/>
          </c:if>
@@ -178,7 +178,7 @@
             <c:if test='url != null'>
                <c:attribute name='href' value='url'/>
             </c:if>
-            <c:value-of value='TableColumnText(col)'/>
+            <c:value-of value='TableColumnHeaderText(col)'/>
          </c:element>
       </th>
    </c:template>
@@ -353,7 +353,7 @@
       </c:script>
    </c:function>
 
-   <c:function name='TableColumnText' as='string' visibility='public'>
+   <c:function name='TableColumnHeaderText' as='string' visibility='public'>
       <c:param name='col' as='ModelMetadata'/>
 
       <c:return value='col.ShortDisplayName ?? col.GetDisplayName()'/>
