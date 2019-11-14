@@ -271,6 +271,9 @@
             <c:for-each name='cell' in='cellsFn(row)'>
                <td>
                   <c:choose>
+                     <c:when test='TableCellDisplayMode(cell)'>
+                        <a:display name='{cell.PropertyName}'/>
+                     </c:when>
                      <c:when test='TableCellTruncate(cell)'>
                         <div class='trunc'>
                            <c:attribute name='data-text'>
@@ -279,7 +282,7 @@
                         </div>
                      </c:when>
                      <c:otherwise>
-                        <a:display name='{cell.PropertyName}'/>
+                        <a:display-text name='{cell.PropertyName}'/>
                      </c:otherwise>
                   </c:choose>
                </td>
@@ -359,12 +362,18 @@
       <c:return value='col.ShortDisplayName ?? col.GetDisplayName()'/>
    </c:function>
 
+   <c:function name='TableCellDisplayMode' as='bool' visibility='public'>
+      <c:param name='cell' as='ModelMetadata'/>
+
+      <c:return value='!string.IsNullOrEmpty(cell.DataTypeName)
+         || !string.IsNullOrEmpty(cell.TemplateHint)
+         || (Nullable.GetUnderlyingType(cell.ModelType) ?? cell.ModelType).IsEnum'/>
+   </c:function>
+
    <c:function name='TableCellTruncate' as='bool' visibility='public'>
       <c:param name='cell' as='ModelMetadata'/>
 
-      <c:return value='string.IsNullOrEmpty(cell.DataTypeName)
-         &amp;&amp; string.IsNullOrEmpty(cell.TemplateHint)
-         &amp;&amp; !(Nullable.GetUnderlyingType(cell.ModelType) ?? cell.ModelType).IsEnum'/>
+      <c:return value='true'/>
    </c:function>
 
    <c:template name='pagination' visibility='public'>
