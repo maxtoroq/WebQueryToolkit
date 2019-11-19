@@ -8,7 +8,7 @@ function GeneratePackages {
    $pkgFileExtension = "xcst"
    $nugetPackages = Resolve-Path ..\..\packages
 
-   # AssemblyResolve is used to enable loading **newer versions** of Xcst.Compiler's dependencies
+   # AssemblyResolve is used to enable loading (newer versions of) Xcst.Compiler's dependencies
    $onAssemblyResolve = [ResolveEventHandler] {
       param($sender, $e)
 
@@ -17,9 +17,6 @@ function GeneratePackages {
 
       if ($assemblyName.StartsWith("saxon9he") -or $assemblyName.StartsWith("IKVM.")) {
          $assemblyPath = "$nugetPackages\Saxon-HE.*\lib\net40\$assemblyName.dll"
-
-      } elseif ($assemblyName.StartsWith("Newtonsoft.Json")) {
-         $assemblyPath = "$nugetPackages\$assemblyName.*\lib\net45\$assemblyName.dll"
       }
 
       if (-not (Test-Path $assemblyPath)) {
