@@ -43,10 +43,10 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
     <Reference Include="Xcst.AspNet.Extension, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Xcst.AspNet.Extension.0.66.0\lib\net46\Xcst.AspNet.Extension.dll</HintPath>
+      <HintPath>..\..\packages\Xcst.AspNet.Extension.0.67.0\lib\net46\Xcst.AspNet.Extension.dll</HintPath>
     </Reference>
     <Reference Include="Xcst.Compiler, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Xcst.Compiler.0.105.0\lib\net46\Xcst.Compiler.dll</HintPath>
+      <HintPath>..\..\packages\Xcst.Compiler.0.106.0\lib\net46\Xcst.Compiler.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
