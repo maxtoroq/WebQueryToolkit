@@ -41,7 +41,7 @@ namespace WebQueryToolkit {
       /// <summary>
       /// The default sort expression, or <code>null</code> if no default was specified.
       /// </summary>
-      public string/*?*/
+      public string?
       OrderBy { get; }
 
       /// <summary>
@@ -128,20 +128,20 @@ namespace WebQueryToolkit {
       /// <param name="topParameterName"><code>"$top"</code> is the default.</param>
       public
       WebQuerySettings(
-            string[] filterAllowedProperties = null,
+            string[]? filterAllowedProperties = null,
 
-            string orderBy = null,
+            string? orderBy = null,
             bool orderByParameterAllowed = false,
-            string[] orderByAllowedProperties = null,
-            string orderByParameterName = null,
+            string[]? orderByAllowedProperties = null,
+            string? orderByParameterName = null,
 
             bool skipParameterAllowed = false,
-            string skipParameterName = null,
+            string? skipParameterName = null,
 
             int? top = null,
             bool topParameterAllowed = false,
             int? topMax = null,
-            string topParameterName = null) {
+            string? topParameterName = null) {
 
          this.FilterAllowedProperties = new HashSet<string>(filterAllowedProperties ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
 
@@ -153,13 +153,13 @@ namespace WebQueryToolkit {
          this.OrderByParameterAllowed = orderByParameterAllowed;
 
          if (!String.IsNullOrEmpty(orderByParameterName)) {
-            this.OrderByParameterName = orderByParameterName;
+            this.OrderByParameterName = orderByParameterName!;
          }
 
          this.SkipParameterAllowed = skipParameterAllowed;
 
          if (!String.IsNullOrEmpty(skipParameterName)) {
-            this.SkipParameterName = skipParameterName;
+            this.SkipParameterName = skipParameterName!;
          }
 
          this.Top = top;
@@ -167,7 +167,7 @@ namespace WebQueryToolkit {
          this.TopParameterAllowed = topParameterAllowed;
 
          if (!String.IsNullOrEmpty(topParameterName)) {
-            this.TopParameterName = topParameterName;
+            this.TopParameterName = topParameterName!;
          }
       }
    }
@@ -178,8 +178,11 @@ namespace WebQueryToolkit {
    /// </summary>
    public class WebQueryParameters {
 
-      readonly NameValueCollection/*?*/
+      readonly NameValueCollection?
       urlQuery;
+
+      static readonly char[]
+      pathEndDelimChars = { '?', '#' };
 
       /// <summary>
       /// The original URL. Used by <see cref="GetPageUrl"/> and <see cref="GetSortUrl"/>.
@@ -191,7 +194,7 @@ namespace WebQueryToolkit {
       /// The value of the *orderby* parameter if allowed/present,
       /// or the default value, or <code>null</code>.
       /// </summary>
-      public string/*?*/
+      public string?
       OrderBy { get; }
 
       /// <summary>
@@ -234,19 +237,19 @@ namespace WebQueryToolkit {
       /// <param name="errorMessage">Used when a parameter is not allowed or out of range.</param>
       /// <returns><code>true</code> if <paramref name="parameters"/> is set to a new instance.</returns>
       public static bool
-      TryCreate(Uri url, NameValueCollection urlQuery, WebQuerySettings settings, out WebQueryParameters/*?*/ parameters, out string/*?*/ errorMessage) {
+      TryCreate(Uri url, NameValueCollection urlQuery, WebQuerySettings settings, out WebQueryParameters? parameters, out string? errorMessage) {
 
-         if (url == null) throw new ArgumentNullException(nameof(url));
-         if (urlQuery == null) throw new ArgumentNullException(nameof(urlQuery));
-         if (settings == null) throw new ArgumentNullException(nameof(settings));
+         if (url is null) throw new ArgumentNullException(nameof(url));
+         if (urlQuery is null) throw new ArgumentNullException(nameof(urlQuery));
+         if (settings is null) throw new ArgumentNullException(nameof(settings));
 
          parameters = null;
 
-         string orderBy = null;
+         string? orderBy = null;
          int? skip = null;
          int? top = null;
 
-         Func<string, string> disallowedParamError = param => $"The {param} parameter is disallowed.";
+         static string disallowedParamError(string param) => $"The {param} parameter is disallowed.";
 
          for (int i = 0; i < urlQuery.Keys.Count; i++) {
 
@@ -260,7 +263,7 @@ namespace WebQueryToolkit {
                   return false;
                }
 
-               if ((orderBy = NonWhiteSpaceSingleValue(values, key, out errorMessage)) == null) {
+               if ((orderBy = NonWhiteSpaceSingleValue(values, key, out errorMessage)) is null) {
                   return false;
                }
 
@@ -290,7 +293,7 @@ namespace WebQueryToolkit {
                   return false;
                }
 
-               if ((skip = Int32NonNegativeValue(values, key, out errorMessage)) == null) {
+               if ((skip = Int32NonNegativeValue(values, key, out errorMessage)) is null) {
                   return false;
                }
 
@@ -301,13 +304,13 @@ namespace WebQueryToolkit {
                   return false;
                }
 
-               if ((top = Int32NonNegativeValue(values, key, out errorMessage)) == null) {
+               if ((top = Int32NonNegativeValue(values, key, out errorMessage)) is null) {
                   return false;
                }
             }
          }
 
-         if (orderBy == null) {
+         if (orderBy is null) {
             orderBy = settings.OrderBy;
          }
 
@@ -332,58 +335,54 @@ namespace WebQueryToolkit {
       }
 
       static int?
-      Int32NonNegativeValue(string[] values, string parameterName, out string/*?*/ errorMessage) {
+      Int32NonNegativeValue(string[] values, string parameterName, out string? errorMessage) {
 
-         int? value;
-
-         if ((value = Int32Value(values, parameterName, out errorMessage)) == null) {
-            return null;
+         if (Int32Value(values, parameterName, out errorMessage) is int value) {
+            if (value >= 0) {
+               return value;
+            } else {
+               errorMessage = parameterName + " cannot be less than zero.";
+               return null;
+            }
          }
 
-         if (value.Value < 0) {
-            errorMessage = parameterName + " cannot be less than zero.";
-            return null;
-         }
-
-         return value;
+         return null;
       }
 
       static int?
-      Int32Value(string[] values, string parameterName, out string/*?*/ errorMessage) {
+      Int32Value(string[] values, string parameterName, out string? errorMessage) {
 
-         string str;
-
-         if ((str = NonWhiteSpaceSingleValue(values, parameterName, out errorMessage)) == null) {
-            return null;
+         if (NonWhiteSpaceSingleValue(values, parameterName, out errorMessage) is string str) {
+            if (Int32.TryParse(str, NumberStyles.None, CultureInfo.InvariantCulture, out int value)) {
+               return value;
+            } else {
+               errorMessage = parameterName + " parameter must be a valid integer.";
+               return null;
+            }
          }
 
-         int val;
-
-         if (!Int32.TryParse(str, NumberStyles.None, CultureInfo.InvariantCulture, out val)) {
-            errorMessage = parameterName + " parameter must be a valid integer.";
-            return null;
-         }
-
-         return val;
+         return null;
       }
 
-      static string/*?*/
-      NonWhiteSpaceSingleValue(string[] values, string parameterName, out string/*?*/ errorMessage) {
+      static string?
+      NonWhiteSpaceSingleValue(string[] values, string parameterName, out string? errorMessage) {
 
-         if (values.Length > 1) {
+         if (values.Length == 1) {
+
+            string value = values[0];
+
+            if (!String.IsNullOrWhiteSpace(value)) {
+               errorMessage = null;
+               return value;
+            } else {
+               errorMessage = parameterName + " parameter cannot be empty.";
+               return null;
+            }
+
+         } else {
             errorMessage = parameterName + " parameter cannot be specified more than once.";
             return null;
          }
-
-         string val = values[0];
-
-         if (String.IsNullOrWhiteSpace(val)) {
-            errorMessage = parameterName + " parameter cannot be empty.";
-            return null;
-         }
-
-         errorMessage = null;
-         return val;
       }
 
       /// <summary>
@@ -396,14 +395,14 @@ namespace WebQueryToolkit {
       public
       WebQueryParameters(
             Uri url,
-            NameValueCollection urlQuery/*?*/,
+            NameValueCollection? urlQuery,
             WebQuerySettings settings,
-            string/*?*/ orderBy,
+            string? orderBy,
             int skip,
             int? top) {
 
-         if (url == null) throw new ArgumentNullException(nameof(url));
-         if (settings == null) throw new ArgumentNullException(nameof(settings));
+         if (url is null) throw new ArgumentNullException(nameof(url));
+         if (settings is null) throw new ArgumentNullException(nameof(settings));
 
          this.Url = url;
 
@@ -426,29 +425,29 @@ namespace WebQueryToolkit {
       /// Use an empty string to never include the path.
       /// </param>
       /// <returns>The URL for a specific page.</returns>
-      public string/*?*/
-      GetPageUrl(int pageNumber, string urlPath = null) {
+      public string?
+      GetPageUrl(int pageNumber, string? urlPath = null) {
 
-         if (!this.PaginationEnabled
-            || pageNumber <= 0) {
+         if (this.PaginationEnabled
+            && pageNumber > 0) {
 
-            return null;
+            int top = this.Top!.Value;
+            int skip = (pageNumber * top) - top;
+
+            NameValueCollection query = GetUrlQuery();
+            query.Remove(this.Settings.SkipParameterName);
+
+            if (skip > 0) {
+               query[this.Settings.SkipParameterName] = skip.ToString(CultureInfo.InvariantCulture);
+            }
+
+            string path = urlPath ?? GetUrlPath();
+            string queryString = ToQueryString(query, includeDelimiter: true);
+
+            return String.Concat(path, queryString);
          }
 
-         int top = this.Top.Value;
-         int skip = (pageNumber * top) - top;
-
-         NameValueCollection query = GetUrlQuery();
-         query.Remove(this.Settings.SkipParameterName);
-
-         if (skip > 0) {
-            query[this.Settings.SkipParameterName] = skip.ToString(CultureInfo.InvariantCulture);
-         }
-
-         string path = urlPath ?? GetUrlPath() ?? String.Empty;
-         string queryString = ToQueryString(query, includeDelimiter: true);
-
-         return String.Concat(path, queryString);
+         return null;
       }
 
       /// <summary>
@@ -460,56 +459,53 @@ namespace WebQueryToolkit {
       /// Use an empty string to never include the path.
       /// </param>
       /// <returns>The URL for a specific sort value.</returns>
-      public string/*?*/
-      GetSortUrl(string sortParam, string urlPath = null) {
+      public string?
+      GetSortUrl(string sortParam, string? urlPath = null) {
 
-         if (sortParam == null) throw new ArgumentNullException(nameof(sortParam));
+         if (sortParam is null) throw new ArgumentNullException(nameof(sortParam));
 
-         if (!this.Settings.OrderByParameterAllowed) {
-            return null;
+         if (this.Settings.OrderByParameterAllowed) {
+
+            bool isDefaultSort = this.Settings.OrderBy?
+               .Equals(sortParam, StringComparison.OrdinalIgnoreCase) == true;
+
+            NameValueCollection query = GetUrlQuery();
+            query.Remove(this.Settings.OrderByParameterName);
+
+            if (this.Settings.SkipParameterAllowed) {
+               query.Remove(this.Settings.SkipParameterName);
+            }
+
+            if (!isDefaultSort
+               && sortParam.Length > 0) {
+
+               query[this.Settings.OrderByParameterName] = sortParam;
+            }
+
+            string path = urlPath ?? GetUrlPath();
+            string queryString = ToQueryString(query, includeDelimiter: true);
+
+            return String.Concat(path, queryString);
          }
 
-         bool isDefaultSort = this.Settings.OrderBy?
-            .Equals(sortParam, StringComparison.OrdinalIgnoreCase) == true;
-
-         NameValueCollection query = GetUrlQuery();
-         query.Remove(this.Settings.OrderByParameterName);
-
-         if (this.Settings.SkipParameterAllowed) {
-            query.Remove(this.Settings.SkipParameterName);
-         }
-
-         if (!isDefaultSort
-            && sortParam.Length > 0) {
-
-            query[this.Settings.OrderByParameterName] = sortParam;
-         }
-
-         string path = urlPath ?? GetUrlPath() ?? String.Empty;
-         string queryString = ToQueryString(query, includeDelimiter: true);
-
-         return String.Concat(path, queryString);
+         return null;
       }
 
-      string/*?*/
+      string
       GetUrlPath() {
-
-         if (this.Url == null) {
-            return null;
-         }
 
          if (this.Url.IsAbsoluteUri) {
             return this.Url.AbsolutePath;
          }
 
          string urlStr = this.Url.OriginalString;
-         int pathEnd = urlStr.IndexOfAny(new[] { '?', '#' });
+         int pathEnd = urlStr.IndexOfAny(pathEndDelimChars);
 
-         if (pathEnd == -1) {
-            return urlStr;
+         if (pathEnd > -1) {
+            return urlStr.Substring(0, pathEnd);
          }
 
-         return urlStr.Substring(0, pathEnd);
+         return urlStr;
       }
 
       NameValueCollection
@@ -528,9 +524,9 @@ namespace WebQueryToolkit {
       public bool
       HasQueryParam(string name) {
 
-         if (name == null) throw new ArgumentNullException(nameof(name));
+         if (name is null) throw new ArgumentNullException(nameof(name));
 
-         if (this.urlQuery == null) {
+         if (this.urlQuery is null) {
             return false;
          }
 
@@ -547,7 +543,7 @@ namespace WebQueryToolkit {
       public static string
       ToQueryString(NameValueCollection qs, bool includeDelimiter) {
 
-         if (qs == null) throw new ArgumentNullException(nameof(qs));
+         if (qs is null) throw new ArgumentNullException(nameof(qs));
 
          var sb = new StringBuilder();
 
@@ -611,7 +607,7 @@ namespace WebQueryToolkit {
       /// <summary>
       /// The query parameters used to obtain pagination information.
       /// </summary>
-      public WebQueryParameters/*?*/
+      public WebQueryParameters?
       QueryParameters { get; }
 
       /// <summary>
@@ -627,7 +623,7 @@ namespace WebQueryToolkit {
       CurrentPage { get; }
 
       protected
-      WebQueryResults(int? totalCount, WebQueryParameters/*?*/ queryParameters) {
+      WebQueryResults(int? totalCount, WebQueryParameters? queryParameters) {
 
          this.TotalCount = totalCount;
          this.QueryParameters = queryParameters;
@@ -637,7 +633,7 @@ namespace WebQueryToolkit {
             int skip = this.QueryParameters.Skip;
             int top = this.QueryParameters.Top.GetValueOrDefault();
 
-            this.NumberOfPages = (top == 0 || totalCount == null) ? 0
+            this.NumberOfPages = (top == 0 || totalCount is null) ? 0
                : (int)Decimal.Ceiling(Decimal.Divide(totalCount.Value, top));
 
             this.CurrentPage = (top == 0) ? 0
@@ -692,9 +688,9 @@ namespace WebQueryToolkit {
       WebQueryResults(
             IEnumerable<TResult> results,
             int? totalCount = null,
-            WebQueryParameters queryParameters = null) : base(totalCount, queryParameters) {
+            WebQueryParameters? queryParameters = null) : base(totalCount, queryParameters) {
 
-         if (results == null) throw new ArgumentNullException(nameof(results));
+         if (results is null) throw new ArgumentNullException(nameof(results));
 
          this.results = results;
       }
@@ -702,7 +698,7 @@ namespace WebQueryToolkit {
       public new IEnumerator<TResult>
       GetEnumerator() {
 
-         if (this.TotalCount == null
+         if (this.TotalCount is null
             || this.TotalCount > 0) {
 
             foreach (var item in this.results) {
@@ -732,7 +728,7 @@ namespace WebQueryToolkit {
       TryCreateWebQueryParameters(
             this HttpRequestBase request,
             WebQuerySettings settings,
-            out WebQueryParameters/*?*/ parameters) {
+            out WebQueryParameters? parameters) {
 
          return WebQueryParameters.TryCreate(
             request.Url,
@@ -750,7 +746,7 @@ namespace WebQueryToolkit {
       ToWebQueryResults<TResult>(
             this IEnumerable<TResult> source,
             int? totalCount = null,
-            WebQueryParameters queryParameters = null) {
+            WebQueryParameters? queryParameters = null) {
 
          return new WebQueryResults<TResult>(
             source,
@@ -765,7 +761,7 @@ namespace WebQueryToolkit {
       public static WebQueryResults<TResult>
       ToWebQueryResults<TResult>(
             this IEnumerable<TResult> source,
-            WebQueryParameters/*?*/ queryParameters) {
+            WebQueryParameters? queryParameters) {
 
          return new WebQueryResults<TResult>(
             source,

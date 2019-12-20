@@ -32,25 +32,25 @@ namespace WebQueryToolkit {
       internal bool
       topSet, topMaxSet;
 
-      public string[]
+      public string[]?
       FilterAllowedProperties { get; set; }
 
-      public string
+      public string?
       OrderBy { get; set; }
 
-      public string[]
+      public string[]?
       OrderByAllowedProperties { get; set; }
 
       public bool
       OrderByParameterAllowed { get; set; }
 
-      public string
+      public string?
       OrderByParameterName { get; set; }
 
       public bool
       SkipParameterAllowed { get; set; }
 
-      public string
+      public string?
       SkipParameterName { get; set; }
 
       public int
@@ -74,7 +74,7 @@ namespace WebQueryToolkit {
       public bool
       TopParameterAllowed { get; set; }
 
-      public string
+      public string?
       TopParameterName { get; set; }
    }
 
@@ -86,14 +86,14 @@ namespace WebQueryToolkit {
       public static WebQuerySettings
       ForType(Type type) {
 
-         if (type == null) throw new ArgumentNullException(nameof(type));
+         if (type is null) throw new ArgumentNullException(nameof(type));
 
          WebQueryableAttribute attr = type
             .GetCustomAttributes(typeof(WebQueryableAttribute), inherit: true)
             .Cast<WebQueryableAttribute>()
             .SingleOrDefault();
 
-         if (attr == null) {
+         if (attr is null) {
             throw new InvalidOperationException($"The type {type.FullName} is not annotated. Use wqt:queryable='yes'.");
          }
 
@@ -122,7 +122,7 @@ namespace WebQueryToolkit {
       public Func<object, string>
       rowUrlFn(Func<TResult, string> urlFn) {
 
-         if (urlFn == null) throw new ArgumentNullException(nameof(urlFn));
+         if (urlFn is null) throw new ArgumentNullException(nameof(urlFn));
 
          return o => urlFn((TResult)o);
       }

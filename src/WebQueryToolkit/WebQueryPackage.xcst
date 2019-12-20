@@ -30,32 +30,31 @@
 
    <c:template name='table' visibility='public' expand-text='yes'>
       <c:param name='queryResults' as='WebQueryResults' required='yes'/>
-      <c:param name='tableId' as='string'/>
-      <c:param name='tableClass' as='string'/>
-      <c:param name='rowUrlFn' as='Func&lt;object, string>'/>
-      <c:param name='filtersOptions' as='IDictionary&lt;string, IEnumerable&lt;SelectListItem>>'/>
+      <c:param name='tableId' as='string?'/>
+      <c:param name='tableClass' as='string?'/>
+      <c:param name='rowUrlFn' as='Func&lt;object, string>?'/>
+      <c:param name='filtersOptions' as='IDictionary&lt;string, IEnumerable&lt;SelectListItem>>?'/>
 
       <c:script>
          <![CDATA[
 
          Type resultsType = queryResults.GetType();
-         Type containerType = null;
+         Type? elementType = null;
 
          while (resultsType != null) {
 
             if (resultsType.IsGenericType
                && resultsType.GetGenericTypeDefinition() == typeof(WebQueryResults<>)) {
 
-               containerType = resultsType.GetGenericArguments()[0];
+               elementType = resultsType.GetGenericArguments()[0];
                break;
             }
 
             resultsType = resultsType.BaseType;
          }
 
-         if (containerType == null) {
-            throw new ArgumentException($"{nameof(queryResults)} must be an instance of {typeof(WebQueryResults<>).FullName}.", nameof(queryResults));
-         }
+         Type containerType = elementType
+            ?? throw new ArgumentException($"{nameof(queryResults)} must be an instance of {typeof(WebQueryResults<>).FullName}.", nameof(queryResults));
 
          ModelMetadata[] columns = ModelMetadataProviders.Current
             .GetMetadataForProperties(null, containerType)
@@ -71,7 +70,7 @@
             .ToArray();
 
          Func<ModelMetadata, bool> colSortableFn = c => TableColumnSort(c, queryResults);
-         Func<ModelMetadata, string> colSortUrlFn = c => colSortableFn(c) ? TableColumnSortUrl(c, queryResults) : null;
+         Func<ModelMetadata, string?> colSortUrlFn = c => colSortableFn(c) ? TableColumnSortUrl(c, queryResults) : null;
 
          Func<string, bool> colSortingFn = s =>
             queryResults.QueryParameters?.OrderBy?.Equals(s, StringComparison.OrdinalIgnoreCase) == true;
@@ -90,7 +89,7 @@
             && modelState.ContainsKey(c.PropertyName)
             && modelState[c.PropertyName].Value != null);
 
-         object filterModel = (!containerType.IsAbstract) ?
+         object? filterModel = (!containerType.IsAbstract) ?
             Activator.CreateInstance(containerType)
             : null;
          ]]>
@@ -115,8 +114,8 @@
    <c:template name='table-table' visibility='public'>
       <c:param name='columns' as='ModelMetadata[]' required='yes'/>
       <c:param name='queryResults' as='WebQueryResults' required='yes' tunnel='yes'/>
-      <c:param name='tableId' as='string'/>
-      <c:param name='tableClass' as='string'/>
+      <c:param name='tableId' as='string?'/>
+      <c:param name='tableClass' as='string?'/>
 
       <table>
          <c:if test='tableId != null'>
@@ -164,11 +163,11 @@
 
    <c:template name='table-column-header' visibility='public'>
       <c:param name='col' as='ModelMetadata' required='yes'/>
-      <c:param name='colClassFn' as='Func&lt;ModelMetadata, string>' tunnel='yes'/>
-      <c:param name='colSortUrlFn' as='Func&lt;ModelMetadata, string>' tunnel='yes'/>
+      <c:param name='colClassFn' as='Func&lt;ModelMetadata, string>?' tunnel='yes'/>
+      <c:param name='colSortUrlFn' as='Func&lt;ModelMetadata, string?>?' tunnel='yes'/>
 
-      <c:variable name='cssClass' value='colClassFn(col)'/>
-      <c:variable name='url' value='colSortUrlFn(col)'/>
+      <c:variable name='cssClass' value='colClassFn?.Invoke(col)'/>
+      <c:variable name='url' value='colSortUrlFn?.Invoke(col)'/>
 
       <th scope='col' title='{col.GetDisplayName()}'>
          <c:if test='!string.IsNullOrEmpty(cssClass)'>
@@ -186,8 +185,8 @@
    <c:template name='table-filters-row' visibility='public'>
       <c:param name='columns' as='ModelMetadata[]' required='yes'/>
       <c:param name='colFilterableFn' as='Func&lt;ModelMetadata, bool>' tunnel='yes'/>
-      <c:param name='filtersOptions' as='IDictionary&lt;string, IEnumerable&lt;SelectListItem>>' required='yes' tunnel='yes'/>
-      <c:param name='filterModel' as='object' tunnel='yes'/>
+      <c:param name='filtersOptions' as='IDictionary&lt;string, IEnumerable&lt;SelectListItem>>?' required='yes' tunnel='yes'/>
+      <c:param name='filterModel' as='object?' tunnel='yes'/>
 
       <c:if test='filterModel != null
          &amp;&amp; columns.Any(c => colFilterableFn(c))'>
@@ -255,7 +254,7 @@
       <c:param name='element' as='object' required='yes'/>
       <c:param name='rowFn' as='Func&lt;object, ModelMetadata>' required='yes' tunnel='yes'/>
       <c:param name='cellsFn' as='Func&lt;ModelMetadata, ModelMetadata[]>' required='yes' tunnel='yes'/>
-      <c:param name='rowUrlFn' as='Func&lt;object, string>' tunnel='yes'/>
+      <c:param name='rowUrlFn' as='Func&lt;object, string>?' tunnel='yes'/>
 
       <c:variable name='row' value='rowFn(element)'/>
       <c:variable name='rowUrl' value='rowUrlFn?.Invoke(element)'/>
@@ -326,32 +325,33 @@
             || settings.OrderByAllowedProperties.Contains(col.PropertyName))'/>
    </c:function>
 
-   <c:function name='TableColumnSortUrl' as='string' visibility='public'>
+   <c:function name='TableColumnSortUrl' as='string?' visibility='public'>
       <c:param name='col' as='ModelMetadata'/>
       <c:param name='queryResults' as='WebQueryResults'/>
 
       <c:script>
          <![CDATA[
 
-         WebQueryParameters queryParams = queryResults.QueryParameters;
+         WebQueryParameters? queryParams = queryResults.QueryParameters;
 
-         if (queryParams == null) {
-            return null;
+         if (queryParams != null) {
+
+            bool hasSortParam = queryParams.HasQueryParam(queryParams.Settings.OrderByParameterName);
+
+            Func<string, bool> isCurrentSort = s =>
+               queryParams.OrderBy?.Equals(s, StringComparison.OrdinalIgnoreCase) == true;
+
+            string sortParam = col.PropertyName;
+            string sortParamDesc = sortParam + " desc";
+
+            string sortVal = isCurrentSort(sortParamDesc) && hasSortParam ? string.Empty
+               : isCurrentSort(sortParam) ? sortParamDesc
+               : sortParam;
+
+            return queryParams.GetSortUrl(sortVal);
          }
 
-         bool hasSortParam = queryParams.HasQueryParam(queryParams.Settings.OrderByParameterName);
-
-         Func<string, bool> isCurrentSort = s =>
-            queryParams.OrderBy?.Equals(s, StringComparison.OrdinalIgnoreCase) == true;
-
-         string sortParam = col.PropertyName;
-         string sortParamDesc = sortParam + " desc";
-
-         string sortVal = isCurrentSort(sortParamDesc) && hasSortParam ? string.Empty
-            : isCurrentSort(sortParam) ? sortParamDesc
-            : sortParam;
-
-         return queryParams.GetSortUrl(sortVal);
+         return null;
          ]]>
       </c:script>
    </c:function>
@@ -381,7 +381,7 @@
       <c:param name='maxPagesToDisplay' value='12' as='int'/>
       <c:param name='alwaysDisplayPreviousNext' value='true' as='bool'/>
       <c:param name='alwaysDisplayFirstLast' value='true' as='bool'/>
-      <c:param name='urlPath' as='string'/>
+      <c:param name='urlPath' as='string?'/>
 
       <c:if test='queryResults.QueryParameters?.PaginationEnabled == true'>
          <c:script>
@@ -413,7 +413,7 @@
             currentPage = queryResults.CurrentPage;
 
             Func<int, bool> activeFn = p => p == queryResults.CurrentPage;
-            Func<int, string> pageUrlFn = p => PageUrl(queryResults, p, urlPath);
+            Func<int, string?> pageUrlFn = p => PageUrl(queryResults, p, urlPath);
             ]]>
          </c:script>
          <c:call-template name='pagination-list'>
@@ -479,15 +479,15 @@
 
    <c:template name='pagination-item' visibility='public'>
       <c:param name='page' as='int' required='yes'/>
-      <c:param name='text' as='string'/>
-      <c:param name='@class' as='string'/>
+      <c:param name='text' as='string?'/>
+      <c:param name='@class' as='string?'/>
       <c:param name='activeFn' as='Func&lt;int, bool>' required='yes' tunnel='yes'/>
-      <c:param name='pageUrlFn' as='Func&lt;int, string>' required='yes' tunnel='yes'/>
+      <c:param name='pageUrlFn' as='Func&lt;int, string?>' required='yes' tunnel='yes'/>
 
       <c:variable name='active' value='activeFn(page)'/>
       <c:variable name='url' value='(active) ? null : pageUrlFn(page)'/>
       <c:variable name='cssClass' value='(active) ? "active"
-         : (url == null) ? "disabled"
+         : (url is null) ? "disabled"
          : null'/>
 
       <li class='{new[] { "page-item", @class, cssClass }}'>
@@ -503,7 +503,7 @@
 
    <c:template name='pager' visibility='public'>
       <c:param name='queryResults' as='WebQueryResults' required='yes'/>
-      <c:param name='urlPath' as='string'/>
+      <c:param name='urlPath' as='string?'/>
 
       <c:if test='queryResults.QueryParameters?.PaginationEnabled == true'>
          <c:script>
@@ -519,7 +519,7 @@
             int lastResultPosition = (count == 0) ? 0 : skip + count;
 
             Func<int, bool> activeFn = p => p == queryResults.CurrentPage;
-            Func<int, string> pageUrlFn = p => PageUrl(queryResults, p, urlPath);
+            Func<int, string?> pageUrlFn = p => PageUrl(queryResults, p, urlPath);
             ]]>
          </c:script>
          <c:call-template name='pager-list'>
@@ -576,14 +576,14 @@
 
    <c:template name='pager-item' visibility='public'>
       <c:param name='page' as='int' required='yes'/>
-      <c:param name='text' as='string'/>
-      <c:param name='title' as='string'/>
+      <c:param name='text' as='string?'/>
+      <c:param name='title' as='string?'/>
       <c:param name='activeFn' as='Func&lt;int, bool>' required='yes' tunnel='yes'/>
-      <c:param name='pageUrlFn' as='Func&lt;int, string>' required='yes' tunnel='yes'/>
+      <c:param name='pageUrlFn' as='Func&lt;int, string?>' required='yes' tunnel='yes'/>
 
       <c:variable name='active' value='activeFn(page)'/>
       <c:variable name='url' value='(active) ? null : pageUrlFn(page)'/>
-      <c:variable name='cssClass' value='(url == null) ? "disabled" : null'/>
+      <c:variable name='cssClass' value='(url is null) ? "disabled" : null'/>
 
       <li>
          <c:if test='cssClass != null'>
@@ -601,10 +601,10 @@
       </li>
    </c:template>
 
-   <c:function name='PageUrl' as='string' visibility='public'>
+   <c:function name='PageUrl' as='string?' visibility='public'>
       <c:param name='queryResults' as='WebQueryResults'/>
       <c:param name='pageNumber' as='int'/>
-      <c:param name='urlPath' value='null' as='string'/>
+      <c:param name='urlPath' value='null' as='string?'/>
 
       <c:script>
          <![CDATA[
@@ -615,7 +615,7 @@
             return null;
          }
 
-         return queryResults.QueryParameters.GetPageUrl(pageNumber, urlPath);
+         return queryResults.QueryParameters?.GetPageUrl(pageNumber, urlPath);
          ]]>
       </c:script>
    </c:function>

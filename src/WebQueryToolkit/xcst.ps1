@@ -47,6 +47,8 @@ function GeneratePackages {
 //     the code is regenerated.
 // </auto-generated>
 //------------------------------------------------------------------------------
+
+#nullable enable
 "@
 
       foreach ($file in ls $startDirectory.FullName *.$pkgFileExtension -Recurse) {
