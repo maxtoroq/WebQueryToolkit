@@ -7,11 +7,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebQueryToolkit", "src\WebQ
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "schemas", "schemas", "{EFA47662-B283-469A-A595-FD95981A22A8}"
 	ProjectSection(SolutionItems) = preProject
-		packages\Xcst.AspNet.0.67.0\schemas\xcst-app.xsd = packages\Xcst.AspNet.0.67.0\schemas\xcst-app.xsd
-		packages\Xcst.Compiler.0.106.0\schemas\xcst.xsd = packages\Xcst.Compiler.0.106.0\schemas\xcst.xsd
+		packages\Xcst.AspNet.0.68.1\schemas\xcst-app.xsd = packages\Xcst.AspNet.0.68.1\schemas\xcst-app.xsd
+		packages\Xcst.Compiler.0.107.0\schemas\xcst.xsd = packages\Xcst.Compiler.0.107.0\schemas\xcst.xsd
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebQueryToolkit.Extension", "src\WebQueryToolkit.Extension\WebQueryToolkit.Extension.csproj", "{19F62794-313A-46EC-8A47-061AB6A6175B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "xcst-codegen", "src\xcst-codegen\xcst-codegen.csproj", "{3EC3CDA1-62BC-4CC7-9C97-D47B3B1328B4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{19F62794-313A-46EC-8A47-061AB6A6175B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{19F62794-313A-46EC-8A47-061AB6A6175B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{19F62794-313A-46EC-8A47-061AB6A6175B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3EC3CDA1-62BC-4CC7-9C97-D47B3B1328B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3EC3CDA1-62BC-4CC7-9C97-D47B3B1328B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3EC3CDA1-62BC-4CC7-9C97-D47B3B1328B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3EC3CDA1-62BC-4CC7-9C97-D47B3B1328B4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -4,16 +4,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{07106156-0E45-4E6B-B98C-35E315F99AC6}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <ProjectGuid>{3EC3CDA1-62BC-4CC7-9C97-D47B3B1328B4}</ProjectGuid>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>WebQueryToolkit</RootNamespace>
-    <AssemblyName>WebQueryToolkit</AssemblyName>
+    <RootNamespace>XcstCodeGen</RootNamespace>
+    <AssemblyName>xcst-codegen</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
-    <LangVersion>8</LangVersion>
-    <Nullable>enable</Nullable>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -32,41 +31,31 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>XcstCodeGen.Program</StartupObject>
+  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="saxon9he-api, Version=9.8.0.15, Culture=neutral, PublicKeyToken=e1fdd002d5083fe6, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Saxon-HE.9.8.0.15\lib\net40\saxon9he-api.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Xml" />
-    <Reference Include="Xcst.AspNet, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Xcst.AspNet.0.68.1\lib\net46\Xcst.AspNet.dll</HintPath>
+    <Reference Include="Xcst.AspNet.Extension, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Xcst.AspNet.Extension.0.68.0\lib\net46\Xcst.AspNet.Extension.dll</HintPath>
     </Reference>
-    <Reference Include="Xcst.Runtime, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Xcst.Runtime.0.107.0\lib\net46\Xcst.Runtime.dll</HintPath>
+    <Reference Include="Xcst.Compiler, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Xcst.Compiler.0.107.0\lib\net46\Xcst.Compiler.dll</HintPath>
     </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Properties\CommonAssemblyInfo.cs" />
-    <Compile Include="WebQueryToolkit.cs" />
-    <Compile Include="WebQueryToolkit.Xcst.cs" />
-    <Compile Include="xcst.generated.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="css\wqt-table.scss" />
-    <None Include="js\wqt-table.js" />
     <None Include="packages.config" />
-    <None Include="WebQueryPackage.xcst" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PreBuildEventDependsOn>ResolveReferences</PreBuildEventDependsOn>
-    <PreBuildEvent>$(ProjectDir)\..\xcst-codegen\bin\$(ConfigurationName)\xcst-codegen.exe $(ProjectPath) $(ConfigurationName)</PreBuildEvent>
-  </PropertyGroup>
 </Project>

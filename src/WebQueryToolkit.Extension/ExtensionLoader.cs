@@ -20,7 +20,7 @@ using Xcst.Compiler;
 
 namespace WebQueryToolkit {
 
-   class ExtensionLoader : XcstExtensionLoader {
+   public class ExtensionLoader : XcstExtensionLoader {
 
       public override Stream LoadSource() {
 
