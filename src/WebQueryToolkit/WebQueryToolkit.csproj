@@ -64,6 +64,13 @@
     <None Include="packages.config" />
     <None Include="WebQueryPackage.xcst" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\xcst-codegen\xcst-codegen.csproj">
+      <Project>{3ec3cda1-62bc-4cc7-9c97-d47b3b1328b4}</Project>
+      <Name>xcst-codegen</Name>
+      <Private>False</Private>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEventDependsOn>ResolveReferences</PreBuildEventDependsOn>
