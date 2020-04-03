@@ -117,6 +117,8 @@ namespace XcstCodeGen {
             compiler.PackageFileExtension = FileExt;
             compiler.IndentChars = "   ";
 
+            compiler.NullableAnnotate = true;
+
             string relativePath = startUri.MakeRelativeUri(fileUri).OriginalString;
 
             // Treat files ending with 'Package' as library packages; other files as pages
