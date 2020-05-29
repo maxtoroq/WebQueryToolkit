@@ -22,10 +22,9 @@ namespace WebQueryToolkit {
 
    public class ExtensionLoader : XcstExtensionLoader {
 
-      public override Stream LoadSource() {
-
-         return typeof(ExtensionLoader).Assembly
+      public override Stream
+      LoadSource() =>
+         typeof(ExtensionLoader).Assembly
             .GetManifestResourceStream($"{nameof(WebQueryToolkit)}.WebQueryToolkit.xsl");
-      }
    }
 }

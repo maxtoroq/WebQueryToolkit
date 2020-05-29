@@ -7,8 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebQueryToolkit", "src\WebQ
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "schemas", "schemas", "{EFA47662-B283-469A-A595-FD95981A22A8}"
 	ProjectSection(SolutionItems) = preProject
-		packages\Xcst.AspNet.0.70.0\schemas\xcst-app.xsd = packages\Xcst.AspNet.0.70.0\schemas\xcst-app.xsd
-		packages\Xcst.Compiler.0.109.0\schemas\xcst.xsd = packages\Xcst.Compiler.0.109.0\schemas\xcst.xsd
+		packages\Xcst.AspNet.0.71.0\schemas\xcst-app.xsd = packages\Xcst.AspNet.0.71.0\schemas\xcst-app.xsd
+		packages\Xcst.Compiler.0.111.0\schemas\xcst.xsd = packages\Xcst.Compiler.0.111.0\schemas\xcst.xsd
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebQueryToolkit.Extension", "src\WebQueryToolkit.Extension\WebQueryToolkit.Extension.csproj", "{19F62794-313A-46EC-8A47-061AB6A6175B}"
