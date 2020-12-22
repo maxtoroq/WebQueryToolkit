@@ -262,32 +262,53 @@
       <a:model value='row.Model' helper-name='htm'>
          <!-- Make sure ModelMetadata is the same for all elements -->
          <c:set ref='htm.ViewData.ModelMetadata' value='row'/>
+
+         <c:variable name='cellDisplayTmpl'>
+            <c:delegate as='object'>
+               <c:param name='cell' as='ModelMetadata' required='yes'/>
+
+               <c:choose>
+                  <c:when test='TableCellDisplayMode(cell)'>
+                     <a:display name='{cell.PropertyName}'/>
+                  </c:when>
+                  <c:when test='TableCellTruncate(cell)'>
+                     <div class='trunc'>
+                        <c:attribute name='data-text'>
+                           <a:display-text name='{cell.PropertyName}'/>
+                        </c:attribute>
+                     </div>
+                  </c:when>
+                  <c:otherwise>
+                     <a:display-text name='{cell.PropertyName}'/>
+                  </c:otherwise>
+               </c:choose>
+            </c:delegate>
+         </c:variable>
+
          <tr>
             <c:if test='rowUrl != null'>
                <c:attribute name='onclick'>window.location.href='{rowUrl}'</c:attribute>
             </c:if>
             <td/>
             <c:for-each name='cell' in='cellsFn(row)'>
-               <td>
-                  <c:choose>
-                     <c:when test='TableCellDisplayMode(cell)'>
-                        <a:display name='{cell.PropertyName}'/>
-                     </c:when>
-                     <c:when test='TableCellTruncate(cell)'>
-                        <div class='trunc'>
-                           <c:attribute name='data-text'>
-                              <a:display-text name='{cell.PropertyName}'/>
-                           </c:attribute>
-                        </div>
-                     </c:when>
-                     <c:otherwise>
-                        <a:display-text name='{cell.PropertyName}'/>
-                     </c:otherwise>
-                  </c:choose>
-               </td>
+               <c:call-template name='table-cell'>
+                  <c:with-param name='cell' value='cell'/>
+                  <c:with-param name='cellDisplayTmpl' value='cellDisplayTmpl'/>
+               </c:call-template>
             </c:for-each>
          </tr>
       </a:model>
+   </c:template>
+
+   <c:template name='table-cell' visibility='public' expand-text='yes'>
+      <c:param name='cell' as='ModelMetadata' required='yes'/>
+      <c:param name='cellDisplayTmpl' as='Xcst.XcstDelegate&lt;object>' required='yes'/>
+
+      <td>
+         <c:evaluate-delegate delegate='cellDisplayTmpl'>
+            <c:with-param name='cell' value='cell'/>
+         </c:evaluate-delegate>
+      </td>
    </c:template>
 
    <c:template name='table-pager' visibility='public'>

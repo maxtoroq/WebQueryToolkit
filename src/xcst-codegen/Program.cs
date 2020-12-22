@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Xcst.Compiler;
@@ -10,35 +9,89 @@ namespace XcstCodeGen {
 
    class Program {
 
-      const string FileExt = "xcst";
-      const string RuntimeNamespace = "AspNetPrecompiled.Infrastructure";
+      const string _fileExt = "xcst";
+      const string _pageBaseType = "global::AspNetPrecompiled.AppPage";
 
-      private Uri ProjectUri { get; }
-
-      private string Configuration { get; }
-
-      private bool LibsAndPages { get; }
+      readonly Uri _projectUri;
+      readonly string _configuration;
+      readonly bool _libsAndPages;
 
       public Program(Uri projectUri, string configuration, bool libsAndPages) {
 
-         this.ProjectUri = projectUri;
-         this.Configuration = configuration;
-         this.LibsAndPages = libsAndPages;
+         _projectUri = projectUri;
+         _configuration = configuration;
+         _libsAndPages = libsAndPages;
       }
 
-      // Loading project dependencies enables referencing packages from other projects
-      void LoadProjectDependencies(XDocument projectDoc) {
+      static bool IsSdkStyle(XDocument projectDoc) =>
+         projectDoc.Root.Name.NamespaceName.Length == 0;
+
+      static string AssemblyName(XDocument projectDoc, string projectPath) {
+
+         XNamespace xmlns = projectDoc.Root.Name.Namespace;
+
+         return projectDoc.Root
+            .Element(xmlns + "PropertyGroup")
+            .Element(xmlns + "AssemblyName")?.Value
+            ?? Path.GetFileNameWithoutExtension(projectPath);
+      }
+
+      static string RootNamespace(XDocument projectDoc, string projectPath) {
+
+         XNamespace xmlns = projectDoc.Root.Name.Namespace;
+
+         return projectDoc.Root
+            .Element(xmlns + "PropertyGroup")
+            .Element(xmlns + "RootNamespace")?.Value
+            ?? Path.GetFileNameWithoutExtension(projectPath);
+      }
+
+      static string Nullable(XDocument projectDoc) {
+
+         XNamespace xmlns = projectDoc.Root.Name.Namespace;
+
+         return projectDoc.Root
+            .Element(xmlns + "PropertyGroup")
+            .Element(xmlns + "Nullable")?.Value;
+      }
+
+      string ReferenceAssemblyPath(string refPath) {
+
+         XDocument refDoc = XDocument.Load(new Uri(_projectUri, refPath).LocalPath);
+         XNamespace xmlns = refDoc.Root.Name.Namespace;
+
+         string refName = AssemblyName(refDoc, refPath);
+         string refDir = Path.GetDirectoryName(refPath);
+         string refDll = Path.Combine(refDir, "bin", _configuration);
+
+         if (IsSdkStyle(refDoc)) {
+
+            XElement propGroup = refDoc.Root
+               .Element(xmlns + "PropertyGroup");
+
+            string targetFx = propGroup.Element(xmlns + "TargetFramework")?.Value
+               ?? propGroup.Element(xmlns + "TargetFrameworks")?.Value.Split(';')[1];
+
+            refDll = Path.Combine(refDll, targetFx);
+         }
+
+         refDll = Path.Combine(refDll, refName + ".dll");
+
+         return new Uri(_projectUri, refDll).LocalPath;
+      }
+
+      // Adding project dependencies as package libraries enables referencing packages from other projects
+      void AddProjectDependencies(XDocument projectDoc, XcstCompiler compiler) {
 
          XNamespace xmlns = projectDoc.Root.Name.Namespace;
 
          foreach (XElement projRef in projectDoc.Root.Elements(xmlns + "ItemGroup").Elements(xmlns + "ProjectReference")) {
 
-            string refDir = Path.GetDirectoryName(projRef.Attribute("Include").Value);
-            string refDll = Path.Combine(refDir, "bin", Configuration, projRef.Element(xmlns + "Name").Value + ".dll");
-            var refDllUri = new Uri(ProjectUri, refDll);
+            string refPath = projRef.Attribute("Include").Value;
+            string refDll = ReferenceAssemblyPath(refPath);
 
-            if (File.Exists(refDllUri.LocalPath)) {
-               Assembly.LoadFrom(refDllUri.LocalPath);
+            if (File.Exists(refDll)) {
+               compiler.AddPackageLibrary(refDll);
             }
          }
       }
@@ -60,7 +113,7 @@ namespace XcstCodeGen {
 
       void Run(TextWriter output) {
 
-         var startUri = new Uri(ProjectUri, ".");
+         var startUri = new Uri(_projectUri, ".");
 
          var compilerFact = new XcstCompilerFactory {
             EnableExtensions = true
@@ -68,16 +121,32 @@ namespace XcstCodeGen {
 
          // Enable "application" extension
          compilerFact.RegisterExtension(new Xcst.Web.Extension.ExtensionLoader {
-            //ApplicationUri = startUri // used to generate Href() functions for each module
+            ApplicationUri = startUri,
+            GenerateLinkTo = true,
+            AnnotateVirtualPath = true
          });
 
-         XDocument projectDoc = XDocument.Load(ProjectUri.LocalPath);
-         XNamespace xmlns = projectDoc.Root.Name.Namespace;
+         XcstCompiler compiler = compilerFact.CreateCompiler();
 
-         LoadProjectDependencies(projectDoc);
+         // No need to look for library packages on loaded assemblies (perf. tweak)
+         compiler.PackageTypeResolver = n => null;
 
-         string nullable = projectDoc.Root.Element(xmlns + "PropertyGroup")
-            .Element(xmlns + "Nullable")?.Value;
+         compiler.PackageFileDirectory = startUri.LocalPath;
+         compiler.PackageFileExtension = _fileExt;
+         compiler.IndentChars = "   ";
+         compiler.CompilationUnitHandler = href => output;
+
+         XDocument projectDoc = XDocument.Load(_projectUri.LocalPath);
+
+         string rootNamespace = RootNamespace(projectDoc, _projectUri.LocalPath);
+         string nullable = Nullable(projectDoc);
+
+         if (nullable != null) {
+            compiler.NullableAnnotate = true;
+            compiler.NullableContext = nullable;
+         }
+
+         AddProjectDependencies(projectDoc, compiler);
 
          output.WriteLine("//------------------------------------------------------------------------------");
          output.WriteLine("// <auto-generated>");
@@ -88,23 +157,12 @@ namespace XcstCodeGen {
          output.WriteLine("// </auto-generated>");
          output.WriteLine("//------------------------------------------------------------------------------");
 
-         if (nullable != null) {
+         if (_libsAndPages) {
             output.WriteLine();
-            output.WriteLine("#nullable " + nullable);
+            output.WriteLine("[assembly: global::Xcst.Web.Precompilation.PrecompiledModule]");
          }
 
-         if (LibsAndPages) {
-            output.WriteLine();
-            output.WriteLine($"[assembly: {RuntimeNamespace}.PrecompiledModule]");
-         }
-
-         string rootNamespace = projectDoc.Root
-            .Elements(xmlns + "PropertyGroup")
-            .First()
-            .Element(xmlns + "RootNamespace")
-            .Value;
-
-         foreach (string file in Directory.EnumerateFiles(startUri.LocalPath, "*." + FileExt, SearchOption.AllDirectories)) {
+         foreach (string file in Directory.EnumerateFiles(startUri.LocalPath, "*." + _fileExt, SearchOption.AllDirectories)) {
 
             var fileUri = new Uri(file, UriKind.Absolute);
             string fileName = Path.GetFileName(file);
@@ -115,24 +173,16 @@ namespace XcstCodeGen {
                continue;
             }
 
-            XcstCompiler compiler = compilerFact.CreateCompiler();
-            compiler.PackagesLocation = startUri.LocalPath;
-            compiler.PackageFileExtension = FileExt;
-            compiler.IndentChars = "   ";
-            compiler.CompilationUnitHandler = href => output;
-
-            if (nullable != null) {
-               compiler.NullableAnnotate = true;
-            }
-
             string relativePath = startUri.MakeRelativeUri(fileUri).OriginalString;
 
             // Treat files ending with 'Package' as library packages; other files as pages
             // Library packages must be rooted at <c:package> and have a name
             // Pages must NOT be named
             // An alternative would be to use different file extensions for library packages and pages
-            bool isPage = LibsAndPages
+            bool isPage = _libsAndPages
                && !fileBaseName.EndsWith("Package");
+
+            compiler.NamedPackage = !isPage;
 
             if (isPage) {
 
@@ -148,11 +198,15 @@ namespace XcstCodeGen {
 
                compiler.TargetClass = "_Page_" + CleanIdentifier(fileBaseName);
                compiler.TargetNamespace = ns;
-               compiler.TargetBaseTypes = new[] { "global::AspNetPrecompiled.AppPage" };
-               compiler.TargetVisibility = "internal";
+               compiler.TargetBaseTypes = new[] { _pageBaseType };
+               compiler.TargetVisibility = CodeVisibility.Internal;
 
             } else {
-               compiler.NamedPackage = true;
+
+               compiler.TargetClass = null;
+               compiler.TargetNamespace = null;
+               compiler.TargetBaseTypes = null;
+               compiler.TargetVisibility = CodeVisibility.Public;
             }
 
             CompileResult xcstResult;
@@ -163,29 +217,6 @@ namespace XcstCodeGen {
             } catch (CompileException ex) {
                VisualStudioErrorLog(ex);
                throw;
-            }
-
-            if (isPage) {
-
-               string pagePath = Path.ChangeExtension(relativePath, null);
-
-               output.WriteLine();
-               output.WriteLine();
-               output.WriteLine($"namespace {compiler.TargetNamespace} {{");
-               output.WriteLine(compiler.IndentChars + $"[global::{RuntimeNamespace}.VirtualPath(\"{pagePath}\")]");
-               output.WriteLine(compiler.IndentChars + $"partial class {compiler.TargetClass} {{");
-               output.WriteLine(compiler.IndentChars + compiler.IndentChars + "public static string LinkTo(params object[] pathParts) {");
-
-               if (fileBaseName == "index") {
-                  string defaultPagePath = pagePath.Substring(0, pagePath.Length - "index".Length).TrimEnd('/');
-                  output.WriteLine($"{compiler.IndentChars + compiler.IndentChars + compiler.IndentChars}return global::{RuntimeNamespace}.LinkToHelper.LinkToDefault(\"/{pagePath}\", \"/{defaultPagePath}\", pathParts);");
-               } else {
-                  output.WriteLine($"{compiler.IndentChars + compiler.IndentChars + compiler.IndentChars}return global::{RuntimeNamespace}.LinkToHelper.LinkTo(\"/{pagePath}\", pathParts);");
-               }
-
-               output.WriteLine(compiler.IndentChars + compiler.IndentChars + "}");
-               output.WriteLine(compiler.IndentChars + "}");
-               output.Write("}");
             }
          }
       }
@@ -210,7 +241,8 @@ namespace XcstCodeGen {
 
          using (var output = File.CreateText(outputUri.LocalPath)) {
 
-            // Because XML parsers normalize CRLF to LF, we want to be consistent with the additional content we create
+            // Because XML parsers normalize CRLF to LF,
+            // we want to be consistent with the additional content we create
             output.NewLine = "\n";
 
             new Program(projectUri, config, libsAndPages)
