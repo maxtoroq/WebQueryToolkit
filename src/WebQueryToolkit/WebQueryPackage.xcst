@@ -14,7 +14,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<c:package name='WebQueryToolkit.WebQueryPackage' version='1.0' language='C#'
+<c:package name='WebQueryToolkit.WebQueryPackage' version='1.0' language='C#' visibility='public'
    xmlns:c='http://maxtoroq.github.io/XCST'
    xmlns:a='http://maxtoroq.github.io/XCST/application'
    extension-element-prefixes='a'>
@@ -87,7 +87,7 @@
 
          bool isFiltering = columns.Any(c => colFilterableFn(c)
             && modelState.ContainsKey(c.PropertyName)
-            && modelState[c.PropertyName].Value != null);
+            && modelState[c.PropertyName]!.Value != null);
 
          object? filterModel = (!containerType.IsAbstract) ?
             Activator.CreateInstance(containerType)
