@@ -27,10 +27,10 @@ namespace WebQueryToolkit {
    public class WebQueryableAttribute : Attribute {
 
       int
-      _Top, _TopMax;
+      _top, _topMax;
 
       internal bool
-      topSet, topMaxSet;
+      _topSet, _topMaxSet;
 
       public string[]?
       FilterAllowedProperties { get; set; }
@@ -55,19 +55,19 @@ namespace WebQueryToolkit {
 
       public int
       Top {
-         get => _Top;
+         get => _top;
          set {
-            _Top = value;
-            topSet = true;
+            _top = value;
+            _topSet = true;
          }
       }
 
       public int
       TopMax {
-         get => _TopMax;
+         get => _topMax;
          set {
-            _TopMax = value;
-            topMaxSet = true;
+            _topMax = value;
+            _topMaxSet = true;
          }
       }
 
@@ -105,8 +105,8 @@ namespace WebQueryToolkit {
             orderByParameterName: attr.OrderByParameterName,
             skipParameterAllowed: attr.SkipParameterAllowed,
             skipParameterName: attr.SkipParameterName,
-            top: (attr.topSet) ? attr.Top : default(int?),
-            topMax: (attr.topMaxSet) ? attr.TopMax : default(int?),
+            top: (attr._topSet) ? attr.Top : default(int?),
+            topMax: (attr._topMaxSet) ? attr.TopMax : default(int?),
             topParameterAllowed: attr.TopParameterAllowed,
             topParameterName: attr.TopParameterName
          );

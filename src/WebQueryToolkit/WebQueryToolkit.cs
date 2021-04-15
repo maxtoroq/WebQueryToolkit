@@ -179,10 +179,10 @@ namespace WebQueryToolkit {
    public class WebQueryParameters {
 
       readonly NameValueCollection?
-      urlQuery;
+      _urlQuery;
 
       static readonly char[]
-      pathEndDelimChars = { '?', '#' };
+      _pathEndDelimChars = { '?', '#' };
 
       /// <summary>
       /// The original URL. Used by <see cref="GetPageUrl"/> and <see cref="GetSortUrl"/>.
@@ -249,7 +249,8 @@ namespace WebQueryToolkit {
          int? skip = null;
          int? top = null;
 
-         static string disallowedParamError(string param) => $"The {param} parameter is disallowed.";
+         static string disallowedParamError(string param) =>
+            $"The {param} parameter is disallowed.";
 
          for (int i = 0; i < urlQuery.Keys.Count; i++) {
 
@@ -406,7 +407,7 @@ namespace WebQueryToolkit {
 
          this.Url = url;
 
-         this.urlQuery = (urlQuery != null) ?
+         _urlQuery = (urlQuery != null) ?
             new NameValueCollection(urlQuery)
             : null;
 
@@ -499,7 +500,7 @@ namespace WebQueryToolkit {
          }
 
          string urlStr = this.Url.OriginalString;
-         int pathEnd = urlStr.IndexOfAny(pathEndDelimChars);
+         int pathEnd = urlStr.IndexOfAny(_pathEndDelimChars);
 
          if (pathEnd > -1) {
             return urlStr.Substring(0, pathEnd);
@@ -511,8 +512,8 @@ namespace WebQueryToolkit {
       NameValueCollection
       GetUrlQuery() {
 
-         return (this.urlQuery != null) ?
-            new NameValueCollection(this.urlQuery)
+         return (_urlQuery != null) ?
+            new NameValueCollection(_urlQuery)
             : new NameValueCollection();
       }
 
@@ -526,12 +527,12 @@ namespace WebQueryToolkit {
 
          if (name is null) throw new ArgumentNullException(nameof(name));
 
-         if (this.urlQuery is null) {
+         if (_urlQuery is null) {
             return false;
          }
 
-         return this.urlQuery[name] != null
-            || this.urlQuery.AllKeys.Contains(name);
+         return _urlQuery[name] != null
+            || _urlQuery.AllKeys.Contains(name);
       }
 
       /// <summary>
@@ -654,13 +655,13 @@ namespace WebQueryToolkit {
    public partial class WebQueryResults<TResult> : WebQueryResults, IEnumerable<TResult> {
 
       readonly IEnumerable<TResult>
-      results;
+      _results;
 
       int
-      count;
+      _count;
 
       bool
-      countComputed;
+      _countComputed;
 
       /// <summary>
       /// The number of elements of the current page.
@@ -669,15 +670,15 @@ namespace WebQueryToolkit {
       public override int
       Count {
          get {
-            if (results is ICollection<TResult> col) {
+            if (_results is ICollection<TResult> col) {
                return col.Count;
             }
 
-            if (!countComputed) {
+            if (!_countComputed) {
                throw new InvalidOperationException("Count is available only after enumerating.");
             }
 
-            return count;
+            return _count;
          }
       }
 
@@ -692,7 +693,7 @@ namespace WebQueryToolkit {
 
          if (results is null) throw new ArgumentNullException(nameof(results));
 
-         this.results = results;
+         _results = results;
       }
 
       public new IEnumerator<TResult>
@@ -701,13 +702,13 @@ namespace WebQueryToolkit {
          if (this.TotalCount is null
             || this.TotalCount > 0) {
 
-            foreach (var item in this.results) {
-               this.count = this.count + 1;
+            foreach (var item in _results) {
+               _count++;
                yield return item;
             }
          }
 
-         this.countComputed = true;
+         _countComputed = true;
       }
 
       protected override IEnumerator
