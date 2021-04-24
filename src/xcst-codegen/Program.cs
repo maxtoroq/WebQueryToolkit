@@ -10,17 +10,19 @@ namespace XcstCodeGen {
    class Program {
 
       const string _fileExt = "xcst";
-      const string _pageBaseType = "global::AspNetPrecompiled.AppPage";
+      const string _defaultPageBaseType = null;
 
       readonly Uri _projectUri;
       readonly string _configuration;
       readonly bool _libsAndPages;
+      readonly string _pageBaseType;
 
-      public Program(Uri projectUri, string configuration, bool libsAndPages) {
+      public Program(Uri projectUri, string configuration, bool libsAndPages, string pageBaseType) {
 
          _projectUri = projectUri;
          _configuration = configuration;
          _libsAndPages = libsAndPages;
+         _pageBaseType = pageBaseType;
       }
 
       static bool IsSdkStyle(XDocument projectDoc) =>
@@ -96,17 +98,38 @@ namespace XcstCodeGen {
          }
       }
 
+      static string FileNamespace(Uri fileUri, Uri startUri, string rootNamespace) {
+
+         string ns = rootNamespace;
+
+         string relativePath = startUri.MakeRelativeUri(fileUri).OriginalString;
+
+         if (relativePath.Contains("/")) {
+
+            string relativeDir = startUri.MakeRelativeUri(new Uri(Path.GetDirectoryName(fileUri.LocalPath), UriKind.Absolute))
+               .OriginalString;
+
+            ns = String.Join(".", new[] { ns }.Concat(
+               relativeDir
+                  .Split('/')
+                  .Select(n => CleanIdentifier(n))));
+         }
+
+         return ns;
+      }
+
       // Transforms invalid identifier (class, namespace, variable) characters
-      string CleanIdentifier(string identifier) =>
-         Regex.Replace(identifier, "[^a-z0-9_.]", "_", RegexOptions.IgnoreCase);
+      static string CleanIdentifier(string identifier) =>
+         Regex.Replace(identifier, "[^a-z0-9_]", "_", RegexOptions.IgnoreCase);
 
       // Show compilation errors on Visual Studio's Error List
       // Also makes the error on the Output window clickable
-      void VisualStudioErrorLog(CompileException ex) {
+      static void VisualStudioErrorLog(CompileException ex) {
 
          string uriString = ex.ModuleUri;
-         var uri = new Uri(uriString);
-         string path = (uri.IsFile) ? uri.LocalPath : uriString;
+         string path = (Uri.TryCreate(uriString, UriKind.Absolute, out Uri uri) && uri.IsFile) ?
+            uri.LocalPath
+            : uriString;
 
          Console.WriteLine($"{path}({ex.LineNumber}): XCST error {ex.ErrorCode}: {ex.Message}");
       }
@@ -173,8 +196,6 @@ namespace XcstCodeGen {
                continue;
             }
 
-            string relativePath = startUri.MakeRelativeUri(fileUri).OriginalString;
-
             // Treat files ending with 'Package' as library packages; other files as pages
             // Library packages must be rooted at <c:package> and have a name
             // Pages must NOT be named
@@ -182,32 +203,23 @@ namespace XcstCodeGen {
             bool isPage = _libsAndPages
                && !fileBaseName.EndsWith("Package");
 
-            compiler.NamedPackage = !isPage;
+            compiler.TargetNamespace = FileNamespace(fileUri, startUri, rootNamespace);
 
             if (isPage) {
 
-               string ns = rootNamespace;
-
-               if (relativePath.Contains("/")) {
-
-                  string relativeDir = startUri.MakeRelativeUri(new Uri(Path.GetDirectoryName(file), UriKind.Absolute))
-                     .OriginalString;
-
-                  ns = ns + "." + CleanIdentifier(relativeDir.Replace("/", "."));
-               }
-
                compiler.TargetClass = "_Page_" + CleanIdentifier(fileBaseName);
-               compiler.TargetNamespace = ns;
-               compiler.TargetBaseTypes = new[] { _pageBaseType };
-               compiler.TargetVisibility = CodeVisibility.Internal;
+
+               if (_pageBaseType != null) {
+                  compiler.TargetBaseTypes = new[] { _pageBaseType };
+               }
 
             } else {
 
-               compiler.TargetClass = null;
-               compiler.TargetNamespace = null;
+               compiler.TargetClass = CleanIdentifier(fileBaseName);
                compiler.TargetBaseTypes = null;
-               compiler.TargetVisibility = CodeVisibility.Public;
             }
+
+            Xcst.Web.Extension.ExtensionLoader.SetPage(compiler, isPage);
 
             CompileResult xcstResult;
 
@@ -233,9 +245,27 @@ namespace XcstCodeGen {
          var projectUri = new Uri(callerBaseUri, args[0]);
          string config = args[1];
 
-         bool libsAndPages = (args.Length > 2) ?
-            args[2] == "-LibsAndPages"
-            : false;
+         bool libsAndPages = false;
+         string pageBaseType = _defaultPageBaseType;
+
+         for (int i = 2; i < args.Length; i++) {
+
+            string name = args[i].Substring(1);
+
+            switch (name) {
+               case "LibsAndPages":
+                  libsAndPages = true;
+                  break;
+
+               case "PageBaseType":
+                  i++;
+                  pageBaseType = args[i];
+                  break;
+
+               default:
+                  throw new ArgumentException($"Unknown parameter '{name}'.", nameof(args));
+            }
+         }
 
          var outputUri = new Uri(projectUri, "xcst.generated.cs");
 
@@ -245,7 +275,7 @@ namespace XcstCodeGen {
             // we want to be consistent with the additional content we create
             output.NewLine = "\n";
 
-            new Program(projectUri, config, libsAndPages)
+            new Program(projectUri, config, libsAndPages, pageBaseType)
                .Run(output);
          }
       }

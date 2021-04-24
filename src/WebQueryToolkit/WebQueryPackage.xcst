@@ -189,7 +189,7 @@
       <c:param name='filterModel' as='object?' tunnel='yes'/>
 
       <c:if test='filterModel != null
-         &amp;&amp; columns.Any(c => colFilterableFn(c))'>
+            &amp;&amp; columns.Any(c => colFilterableFn(c))'>
          <c:variable name='form'>wqt-table-form</c:variable>
          <tr class='filters'>
             <td>
@@ -233,8 +233,8 @@
 
       <form id='{formId}' autocomplete='off'>
          <c:if test='queryParams != null
-            &amp;&amp; queryParams.Settings.OrderByParameterAllowed
-            &amp;&amp; queryParams.HasQueryParam(queryParams.Settings.OrderByParameterName)'>
+               &amp;&amp; queryParams.Settings.OrderByParameterAllowed
+               &amp;&amp; queryParams.HasQueryParam(queryParams.Settings.OrderByParameterName)'>
             <input type='hidden' name='{queryParams.Settings.OrderByParameterName}' value='{queryParams.OrderBy}'/>
          </c:if>
          <button type='submit' class='apply' title='Aplicar filtro'>
@@ -305,9 +305,9 @@
       <c:param name='cellDisplayTmpl' as='Xcst.XcstDelegate&lt;object>' required='yes'/>
 
       <td>
-         <c:evaluate-delegate delegate='cellDisplayTmpl'>
+         <c:invoke-delegate delegate='cellDisplayTmpl'>
             <c:with-param name='cell' value='cell'/>
-         </c:evaluate-delegate>
+         </c:invoke-delegate>
       </td>
    </c:template>
 
@@ -387,8 +387,7 @@
       <c:param name='cell' as='ModelMetadata'/>
 
       <c:return value='!string.IsNullOrEmpty(cell.DataTypeName)
-         || !string.IsNullOrEmpty(cell.TemplateHint)
-         || (Nullable.GetUnderlyingType(cell.ModelType) ?? cell.ModelType).IsEnum'/>
+         || !string.IsNullOrEmpty(cell.TemplateHint)'/>
    </c:function>
 
    <c:function name='TableCellTruncate' as='bool' visibility='public'>
