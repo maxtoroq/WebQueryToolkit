@@ -264,7 +264,7 @@
          <c:set ref='htm.ViewData.ModelMetadata' value='row'/>
 
          <c:variable name='cellDisplayTmpl'>
-            <c:delegate as='object'>
+            <c:delegate>
                <c:param name='cell' as='ModelMetadata' required='yes'/>
 
                <c:choose>
@@ -302,7 +302,7 @@
 
    <c:template name='table-cell' visibility='public' expand-text='yes'>
       <c:param name='cell' as='ModelMetadata' required='yes'/>
-      <c:param name='cellDisplayTmpl' as='Xcst.XcstDelegate&lt;object>' required='yes'/>
+      <c:param name='cellDisplayTmpl' as='Xcst.XcstDelegate&lt;object?>' required='yes'/>
 
       <td>
          <c:invoke-delegate delegate='cellDisplayTmpl'>
