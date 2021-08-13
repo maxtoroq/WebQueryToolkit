@@ -387,7 +387,8 @@
       <c:param name='cell' as='ModelMetadata'/>
 
       <c:return value='!string.IsNullOrEmpty(cell.DataTypeName)
-         || !string.IsNullOrEmpty(cell.TemplateHint)'/>
+         || !string.IsNullOrEmpty(cell.TemplateHint)
+         || !string.IsNullOrEmpty(cell.DisplayFormatString)'/>
    </c:function>
 
    <c:function name='TableCellTruncate' as='bool' visibility='public'>
