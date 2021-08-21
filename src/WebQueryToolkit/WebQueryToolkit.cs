@@ -23,6 +23,11 @@ namespace WebQueryToolkit {
    using System.Text;
    using System.Text.RegularExpressions;
    using System.Web;
+#if NETCOREAPP
+   using HttpRequest = Microsoft.AspNetCore.Http.HttpRequest;
+#else
+   using HttpRequest = System.Web.HttpRequestBase;
+#endif
 
    /// <summary>
    /// Defines default values and configuration of query parameters.
@@ -254,8 +259,8 @@ namespace WebQueryToolkit {
 
          for (int i = 0; i < urlQuery.Keys.Count; i++) {
 
-            string key = urlQuery.Keys[i];
-            string[] values = urlQuery.GetValues(key);
+            string? key = urlQuery.Keys[i];
+            string[] values = urlQuery.GetValues(key)!;
 
             if (key == settings.OrderByParameterName) {
 
@@ -339,12 +344,13 @@ namespace WebQueryToolkit {
       Int32NonNegativeValue(string[] values, string parameterName, out string? errorMessage) {
 
          if (Int32Value(values, parameterName, out errorMessage) is int value) {
+
             if (value >= 0) {
                return value;
-            } else {
-               errorMessage = parameterName + " cannot be less than zero.";
-               return null;
             }
+
+            errorMessage = parameterName + " cannot be less than zero.";
+            return null;
          }
 
          return null;
@@ -354,12 +360,13 @@ namespace WebQueryToolkit {
       Int32Value(string[] values, string parameterName, out string? errorMessage) {
 
          if (NonWhiteSpaceSingleValue(values, parameterName, out errorMessage) is string str) {
+
             if (Int32.TryParse(str, NumberStyles.None, CultureInfo.InvariantCulture, out int value)) {
                return value;
-            } else {
-               errorMessage = parameterName + " parameter must be a valid integer.";
-               return null;
             }
+
+            errorMessage = parameterName + " parameter must be a valid integer.";
+            return null;
          }
 
          return null;
@@ -368,6 +375,11 @@ namespace WebQueryToolkit {
       static string?
       NonWhiteSpaceSingleValue(string[] values, string parameterName, out string? errorMessage) {
 
+         if (values.Length == 0) {
+            errorMessage = null;
+            return null;
+         }
+
          if (values.Length == 1) {
 
             string value = values[0];
@@ -375,15 +387,14 @@ namespace WebQueryToolkit {
             if (!String.IsNullOrWhiteSpace(value)) {
                errorMessage = null;
                return value;
-            } else {
-               errorMessage = parameterName + " parameter cannot be empty.";
-               return null;
             }
 
-         } else {
-            errorMessage = parameterName + " parameter cannot be specified more than once.";
+            errorMessage = parameterName + " parameter cannot be empty.";
             return null;
          }
+
+         errorMessage = parameterName + " parameter cannot be specified more than once.";
+         return null;
       }
 
       /// <summary>
@@ -550,15 +561,15 @@ namespace WebQueryToolkit {
 
          for (int i = 0; i < qs.AllKeys.Length; i++) {
 
-            string key = qs.AllKeys[i];
-            string[] values = qs.GetValues(key);
+            string? key = qs.AllKeys[i];
+            string[] values = qs.GetValues(key)!;
 
             if (values != null
                && values.Length > 0) {
 
-               string encodedKey = (String.IsNullOrEmpty(key) || key[0] == '$') ?
-                  key
-                  : HttpUtility.UrlEncode(key);
+               string? encodedKey =
+                  (String.IsNullOrEmpty(key) || key[0] == '$') ? key
+                     : HttpUtility.UrlEncode(key);
 
                for (int j = 0; j < values.Length; j++) {
 
@@ -727,17 +738,52 @@ namespace WebQueryToolkit {
       /// </summary>
       public static bool
       TryCreateWebQueryParameters(
-            this HttpRequestBase request,
+            this HttpRequest request,
             WebQuerySettings settings,
             out WebQueryParameters? parameters) {
 
          return WebQueryParameters.TryCreate(
-            request.Url,
-            request.QueryString,
+            RequestUri(request),
+            RequestQuery(request),
             settings,
             out parameters,
             out _
          );
+      }
+
+      static Uri
+      RequestUri(HttpRequest request) {
+#if NETCOREAPP
+         var builder = new UriBuilder {
+            Scheme = request.Scheme,
+            Host = request.Host.Host,
+            Port = request.Host.Port ?? -1,
+            Path = request.Path,
+            Query = request.QueryString.ToUriComponent()
+         };
+
+         return builder.Uri;
+#else
+         return request.Url;
+#endif
+      }
+
+      static NameValueCollection
+      RequestQuery(HttpRequest request) {
+#if NETCOREAPP
+         var query = request.Query;
+         var nv = new NameValueCollection();
+
+         foreach (var pair in query) {
+            foreach (var item in pair.Value) {
+               nv.Add(pair.Key, item);
+            }
+         }
+
+         return nv;
+#else
+         return request.QueryString;
+#endif
       }
 
       /// <summary>

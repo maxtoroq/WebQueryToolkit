@@ -38,7 +38,7 @@
       <c:script>
          <![CDATA[
 
-         Type resultsType = queryResults.GetType();
+         Type? resultsType = queryResults.GetType();
          Type? elementType = null;
 
          while (resultsType != null) {

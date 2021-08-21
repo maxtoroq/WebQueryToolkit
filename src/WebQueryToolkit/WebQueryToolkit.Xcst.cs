@@ -91,11 +91,8 @@ namespace WebQueryToolkit {
          WebQueryableAttribute attr = type
             .GetCustomAttributes(typeof(WebQueryableAttribute), inherit: true)
             .Cast<WebQueryableAttribute>()
-            .SingleOrDefault();
-
-         if (attr is null) {
-            throw new InvalidOperationException($"The type {type.FullName} is not annotated. Use wqt:queryable='yes'.");
-         }
+            .SingleOrDefault()
+            ?? throw new InvalidOperationException($"The type {type.FullName} is not annotated. Use wqt:queryable='yes'.");
 
          return new WebQuerySettings(
             filterAllowedProperties: attr.FilterAllowedProperties,
