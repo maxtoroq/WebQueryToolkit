@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <XcstPageEnable Condition="'$(XcstPageEnable)'==''">True</XcstPageEnable>
-    <XcstPageBaseType Condition="'$(XcstPageBaseType)'==''">global::localhost.AppPage</XcstPageBaseType>
+    <XcstPageBaseType Condition="'$(XcstPageBaseType)'==''">Xcst.Web.Mvc.XcstViewPage</XcstPageBaseType>
     <XcstInput Condition="'$(XcstInput)'==''">**\*.xcst</XcstInput>
     <XcstOutput Condition="'$(XcstOutput)'==''">xcst.generated.cs</XcstOutput>
     <XcstCodegenExe Condition="'$(XcstCodegenExe)'==''">$(ProjectDir)..\xcst-codegen\bin\$(Configuration)\xcst-codegen.exe</XcstCodegenExe>
@@ -11,7 +11,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\xcst-codegen\xcst-codegen.csproj" ReferenceOutputAssembly="False" />
+    <ProjectReference Include="..\xcst-codegen\xcst-codegen.csproj" ReferenceOutputAssembly="False">
+      <Project>{3ec3cda1-62bc-4cc7-9c97-d47b3b1328b4}</Project>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
