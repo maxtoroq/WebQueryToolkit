@@ -11,10 +11,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="WebQueryToolkit.xsl" />
-  </ItemGroup>
-
-  <ItemGroup>
     <EmbeddedResource Include="WebQueryToolkit.xsl" />
   </ItemGroup>
 

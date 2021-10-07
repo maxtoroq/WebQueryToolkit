@@ -8,6 +8,7 @@
     <FileVersion>0.28.0</FileVersion>
     <LangVersion>8</LangVersion>
     <Nullable>enable</Nullable>
+    <XcstPageEnable>False</XcstPageEnable>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' != 'net'">
@@ -21,18 +22,6 @@
     <Reference Include="System.Web" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\xcst-codegen\xcst-codegen.csproj">
-      <Private>false</Private>
-    </ProjectReference>
-  </ItemGroup>
-
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent" DependsOnTargets="ResolveReferences">
-    <Exec Command="$(ProjectDir)..\xcst-codegen\bin\$(Configuration)\xcst-codegen.exe $(ProjectPath) $(Configuration)" />
-    <ItemGroup>
-      <Compile Remove="xcst.generated.cs" />
-      <Compile Include="xcst.generated.cs" />
-    </ItemGroup>
-  </Target>
+  <Import Project="..\xcst-codegen\xcst-codegen.targets" />
 
 </Project>
