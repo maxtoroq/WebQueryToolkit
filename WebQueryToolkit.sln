@@ -5,15 +5,14 @@ VisualStudioVersion = 16.0.29503.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "schemas", "schemas", "{EFA47662-B283-469A-A595-FD95981A22A8}"
 	ProjectSection(SolutionItems) = preProject
-		packages\Xcst.AspNet.0.86.0\schemas\xcst-app.xsd = packages\Xcst.AspNet.0.86.0\schemas\xcst-app.xsd
-		packages\Xcst.Compiler.0.141.0\schemas\xcst.xsd = packages\Xcst.Compiler.0.141.0\schemas\xcst.xsd
+		packages\Xcst.Compiler.0.152.0\schemas\xcst.xsd = packages\Xcst.Compiler.0.152.0\schemas\xcst.xsd
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "xcst-codegen", "src\xcst-codegen\xcst-codegen.csproj", "{3EC3CDA1-62BC-4CC7-9C97-D47B3B1328B4}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebQueryToolkit", "src\WebQueryToolkit\WebQueryToolkit.csproj", "{8ABFA26C-3D83-419C-BADF-FA72CBAD7D39}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebQueryToolkit.Extension", "src\WebQueryToolkit.Extension\WebQueryToolkit.Extension.csproj", "{01DEA41B-4C94-4E31-86AF-7DB8F262E81D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebQueryToolkit.Extension", "src\WebQueryToolkit.Extension\WebQueryToolkit.Extension.csproj", "{01DEA41B-4C94-4E31-86AF-7DB8F262E81D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
