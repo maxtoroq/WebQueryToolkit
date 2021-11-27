@@ -13,7 +13,7 @@
 
   <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' != 'net'">
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Xcst.AspNetCore" Version="0.87.0" />
+    <PackageReference Include="Xcst.AspNetCore" Version="0.89.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
