@@ -18,9 +18,9 @@
    xmlns="http://www.w3.org/1999/XSL/Transform"
    xmlns:xs="http://www.w3.org/2001/XMLSchema"
    xmlns:c="http://maxtoroq.github.io/XCST"
-   xmlns:xcst="http://maxtoroq.github.io/XCST/grammar"
-   xmlns:code="http://maxtoroq.github.io/XCST/code"
-   xmlns:src="http://maxtoroq.github.io/XCST/compiled"
+   xmlns:xcst="https://maxtoroq.github.io/XCST/grammar"
+   xmlns:code="https://maxtoroq.github.io/XCST/code"
+   xmlns:src="https://maxtoroq.github.io/XCST/compiled"
    xmlns:wqt="http://maxtoroq.github.io/WebQueryToolkit">
 
    <template match="c:type | c:member" mode="src:type-attribute-extra">
