@@ -1,21 +1,22 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net461</TargetFramework>
-    <RootNamespace>WebQueryToolkit</RootNamespace>
+    <TargetFramework>net5.0</TargetFramework>
+    <LangVersion>9</LangVersion>
+    <Nullable>enable</Nullable>
     <Description>WebQueryToolkit extension elements and attributes for XCST.</Description>
     <Product>WebQueryToolkit</Product>
     <Company>http://maxtoroq.github.io/WebQueryToolkit/</Company>
-    <AssemblyVersion>1.0.0</AssemblyVersion>
-    <FileVersion>0.28.0</FileVersion>
+    <AssemblyVersion>2.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.30</FileVersion>
+    <XcstPageEnable>False</XcstPageEnable>
+    <WqtExtensionEnable>False</WqtExtensionEnable>
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="WebQueryToolkit.xsl" />
+    <PackageReference Include="Xcst.Runtime" Version="0.155.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Xcst.Compiler" Version="0.153.0" />
-  </ItemGroup>
+  <Import Project="..\xcst-codegen\xcst-codegen.targets" />
 
 </Project>
