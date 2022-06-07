@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -8,342 +9,308 @@ using Xcst;
 using Xcst.Compiler;
 using Xcst.PackageModel;
 
-namespace XcstCodeGen {
+namespace XcstCodeGen;
 
-   class Program {
+class Program {
 
-      const string
-      _fileExt = "xcst";
+   const string
+   _fileExt = "xcst";
 
-      readonly Uri
-      _projectUri;
+#pragma warning disable CS8618
+   public Uri
+   ProjectUri { get; init; }
 
-      readonly string
-      _configuration;
+   public string
+   Configuration { get; init; }
+#pragma warning restore CS8618
 
-      readonly bool
-      _pageEnable;
+   public decimal
+   TargetRuntime { get; set; }
 
-      readonly string?
-      _pageBaseType;
+   public bool
+   PageEnable { get; set; }
 
-      readonly bool
-      _wqtExtEnable;
+   public string?
+   PageBaseType { get; set; }
 
-      public string
-      Language { get; }
+   public bool
+   WqtExtensionEnable { get; set; }
 
-      public
-      Program(Uri projectUri, string configuration, bool pageEnable, string? pageBaseType, bool wqtExtEnable) {
+   private string
+   Language => ProjectLang(ProjectUri);
 
-         _projectUri = projectUri;
-         _configuration = configuration;
-         _pageEnable = pageEnable;
-         _pageBaseType = pageBaseType;
-         _wqtExtEnable = wqtExtEnable;
+   static string
+   ProjectLang(Uri projectUri) {
+      var projExt = Path.GetExtension(projectUri.LocalPath).TrimStart('.');
+      return projExt.Substring(0, projExt.Length - "proj".Length);
+   }
 
-         this.Language = ProjectLang(_projectUri);
-      }
+   static string
+   AssemblyName(XDocument projectDoc, string projectPath) =>
+      projectDoc.Root!
+         .Element("PropertyGroup")?
+         .Element("AssemblyName")?.Value
+         ?? Path.GetFileNameWithoutExtension(projectPath);
 
-      static string
-      ProjectLang(Uri projectUri) {
-         var projExt = Path.GetExtension(projectUri.LocalPath).TrimStart('.');
-         return projExt.Substring(0, projExt.Length - "proj".Length);
-      }
+   static string
+   RootNamespace(XDocument projectDoc, string projectPath) =>
+      projectDoc.Root!
+         .Element("PropertyGroup")?
+         .Element("RootNamespace")?.Value
+         ?? Path.GetFileNameWithoutExtension(projectPath);
 
-      static bool
-      IsSdkStyle(XDocument projectDoc) =>
-         projectDoc.Root!.Name.NamespaceName.Length == 0;
+   static string?
+   Nullable(XDocument projectDoc) =>
+      projectDoc.Root!
+         .Element("PropertyGroup")?
+         .Element("Nullable")?.Value;
 
-      static string
-      AssemblyName(XDocument projectDoc, string projectPath) {
+   string
+   ReferenceAssemblyPath(string refPath) {
 
-         var xmlns = projectDoc.Root!.Name.Namespace;
+      var refDoc = XDocument.Load(new Uri(ProjectUri, refPath).LocalPath);
+      var refName = AssemblyName(refDoc, refPath);
+      var refDir = Path.GetDirectoryName(refPath)!;
+      var refDll = Path.Combine(refDir, "bin", Configuration);
 
-         return projectDoc.Root!
-            .Element(xmlns + "PropertyGroup")?
-            .Element(xmlns + "AssemblyName")?.Value
-            ?? Path.GetFileNameWithoutExtension(projectPath);
-      }
+      var propGroup = refDoc.Root!
+         .Element("PropertyGroup")!;
 
-      static string
-      RootNamespace(XDocument projectDoc, string projectPath) {
+      var targetFx = propGroup.Element("TargetFramework")?.Value
+         ?? propGroup.Element("TargetFrameworks")?.Value.Split(';')[1];
 
-         var xmlns = projectDoc.Root!.Name.Namespace;
+      refDll = Path.Combine(refDll, targetFx!);
+      refDll = Path.Combine(refDll, refName + ".dll");
 
-         return projectDoc.Root!
-            .Element(xmlns + "PropertyGroup")?
-            .Element(xmlns + "RootNamespace")?.Value
-            ?? Path.GetFileNameWithoutExtension(projectPath);
-      }
+      return new Uri(ProjectUri, refDll).LocalPath;
+   }
 
-      static string?
-      Nullable(XDocument projectDoc) {
+   // Adding project dependencies as package libraries enables referencing packages from other projects
+   void
+   AddProjectDependencies(XDocument projectDoc, XcstCompiler compiler) {
 
-         var xmlns = projectDoc.Root!.Name.Namespace;
+      foreach (var projRef in projectDoc.Root!.Elements("ItemGroup").Elements("ProjectReference")) {
 
-         return projectDoc.Root!
-            .Element(xmlns + "PropertyGroup")?
-            .Element(xmlns + "Nullable")?.Value;
-      }
+         var refPath = projRef.Attribute("Include")!.Value;
+         var refDll = ReferenceAssemblyPath(refPath);
 
-      string
-      ReferenceAssemblyPath(string refPath) {
-
-         var refDoc = XDocument.Load(new Uri(_projectUri, refPath).LocalPath);
-         var xmlns = refDoc.Root!.Name.Namespace;
-
-         var refName = AssemblyName(refDoc, refPath);
-         var refDir = Path.GetDirectoryName(refPath)!;
-         var refDll = Path.Combine(refDir, "bin", _configuration);
-
-         if (IsSdkStyle(refDoc)) {
-
-            var propGroup = refDoc.Root!
-               .Element(xmlns + "PropertyGroup")!;
-
-            var targetFx = propGroup.Element(xmlns + "TargetFramework")?.Value
-               ?? propGroup.Element(xmlns + "TargetFrameworks")?.Value.Split(';')[1];
-
-            refDll = Path.Combine(refDll, targetFx!);
-         }
-
-         refDll = Path.Combine(refDll, refName + ".dll");
-
-         return new Uri(_projectUri, refDll).LocalPath;
-      }
-
-      // Adding project dependencies as package libraries enables referencing packages from other projects
-      void
-      AddProjectDependencies(XDocument projectDoc, XcstCompiler compiler) {
-
-         var xmlns = projectDoc.Root!.Name.Namespace;
-
-         foreach (var projRef in projectDoc.Root.Elements(xmlns + "ItemGroup").Elements(xmlns + "ProjectReference")) {
-
-            var refPath = projRef.Attribute("Include")!.Value;
-            var refDll = ReferenceAssemblyPath(refPath);
-
-            if (File.Exists(refDll)) {
-               compiler.AddPackageLibrary(refDll);
-            }
+         if (File.Exists(refDll)) {
+            compiler.AddPackageLibrary(refDll);
          }
       }
+   }
 
-      static string
-      FileNamespace(Uri fileUri, Uri startUri, string rootNamespace) {
+   static string
+   FileNamespace(Uri fileUri, Uri startUri, string rootNamespace) {
 
-         var ns = rootNamespace;
-         var relativePath = startUri.MakeRelativeUri(fileUri).OriginalString;
+      var ns = rootNamespace;
+      var relativePath = startUri.MakeRelativeUri(fileUri).OriginalString;
 
-         if (relativePath.Contains("/")) {
+      if (relativePath.Contains("/")) {
 
-            var relativeDir = startUri.MakeRelativeUri(new Uri(Path.GetDirectoryName(fileUri.LocalPath)!, UriKind.Absolute))
-               .OriginalString;
+         var relativeDir = startUri.MakeRelativeUri(new Uri(Path.GetDirectoryName(fileUri.LocalPath)!, UriKind.Absolute))
+            .OriginalString;
 
-            ns = String.Join(".", new[] { ns }.Concat(
-               relativeDir
-                  .Split('/')
-                  .Select(n => CleanIdentifier(n))));
-         }
-
-         return ns;
+         ns = String.Join(".", new[] { ns }.Concat(
+            relativeDir
+               .Split('/')
+               .Select(n => CleanIdentifier(n))));
       }
 
-      // Transforms invalid identifier (class, namespace, variable) characters
-      static string
-      CleanIdentifier(string identifier) =>
-         Regex.Replace(identifier, "[^a-z0-9_]", "_", RegexOptions.IgnoreCase);
+      return ns;
+   }
 
-      // Show compilation errors on Visual Studio's Error List
-      // Also makes the error on the Output window clickable
-      static void
-      VisualStudioErrorLog(RuntimeException ex) {
+   // Transforms invalid identifier (class, namespace, variable) characters
+   static string
+   CleanIdentifier(string identifier) =>
+      Regex.Replace(identifier, "[^a-z0-9_]", "_", RegexOptions.IgnoreCase);
 
-         dynamic? errorData = ex.ErrorData;
+   // Show compilation errors on Visual Studio's Error List
+   // Also makes the error on the Output window clickable
+   static void
+   VisualStudioErrorLog(RuntimeException ex) {
 
-         if (errorData != null) {
+      dynamic? errorData = ex.ErrorData;
 
-            var uriString = errorData.ModuleUri;
-            var path = (Uri.TryCreate(uriString, UriKind.Absolute, out Uri uri) && uri.IsFile) ?
-               uri.LocalPath
-               : uriString;
+      if (errorData != null) {
 
-            Console.WriteLine($"{path}({errorData.LineNumber}): XCST error {ex.ErrorCode}: {ex.Message}");
-         }
+         var uriString = errorData.ModuleUri;
+         var path = (Uri.TryCreate(uriString, UriKind.Absolute, out Uri uri) && uri.IsFile) ?
+            uri.LocalPath
+            : uriString;
+
+         Console.WriteLine($"{path}({errorData.LineNumber}): XCST error {ex.ErrorCode}: {ex.Message}");
+      }
+   }
+
+   void
+   WriteAutogeneratedComment(TextWriter output) {
+
+      var prefix = (Language == "vb") ? "'" : "//";
+
+      output.WriteLine(prefix + "------------------------------------------------------------------------------");
+      output.WriteLine(prefix + " <auto-generated>");
+      output.WriteLine(prefix + $"     This code was generated by {typeof(XcstCompiler).Namespace}.");
+      output.WriteLine(prefix + "");
+      output.WriteLine(prefix + "     Changes to this file may cause incorrect behavior and will be lost if");
+      output.WriteLine(prefix + "     the code is regenerated.");
+      output.WriteLine(prefix + " </auto-generated>");
+      output.WriteLine(prefix + "------------------------------------------------------------------------------");
+   }
+
+   void
+   Run(TextWriter output) {
+
+      var startUri = new Uri(ProjectUri, ".");
+
+      var compiler = new XcstCompiler {
+         PackageFileDirectory = startUri.LocalPath,
+         PackageFileExtension = _fileExt,
+         IndentChars = "   "
+      };
+
+      if (TargetRuntime != default) {
+         compiler.TargetRuntime = TargetRuntime;
       }
 
-      void
-      WriteAutogeneratedComment(TextWriter output) {
+      // Enable "application" extension
+      var appExt = new Xcst.Web.Extension.ExtensionPackage {
+         ApplicationUri = startUri,
+         GenerateLinkTo = true,
+         AnnotateVirtualPath = true
+      };
 
-         var prefix = (this.Language == "vb") ? "'" : "//";
+      compiler.RegisterExtension(appExt);
 
-         output.WriteLine(prefix + "------------------------------------------------------------------------------");
-         output.WriteLine(prefix + " <auto-generated>");
-         output.WriteLine(prefix + $"     This code was generated by {typeof(XcstCompiler).Namespace}.");
-         output.WriteLine(prefix + "");
-         output.WriteLine(prefix + "     Changes to this file may cause incorrect behavior and will be lost if");
-         output.WriteLine(prefix + "     the code is regenerated.");
-         output.WriteLine(prefix + " </auto-generated>");
-         output.WriteLine(prefix + "------------------------------------------------------------------------------");
+      // Enable WebQueryToolkit extension
+      if (WqtExtensionEnable) {
+
+         var wqtExtAssembly = Assembly.LoadFrom(
+            new Uri(startUri, @$"..\WebQueryToolkit.Extension\bin\{Configuration}\net5.0\WebQueryToolkit.Extension.dll").LocalPath)!;
+
+         compiler.RegisterExtension((IXcstPackage)Activator.CreateInstance(wqtExtAssembly.GetType("WebQueryToolkit.Extension.ExtensionPackage")!)!);
       }
 
-      void
-      Run(TextWriter output) {
+      var projectDoc = XDocument.Load(ProjectUri.LocalPath);
+      var rootNamespace = RootNamespace(projectDoc, ProjectUri.LocalPath);
+      var nullable = Nullable(projectDoc);
 
-         var startUri = new Uri(_projectUri, ".");
+      if (nullable != null) {
+         compiler.NullableAnnotate = true;
+         compiler.NullableContext = nullable;
+      }
 
-         var compiler = new XcstCompiler {
-            PackageFileDirectory = startUri.LocalPath,
-            PackageFileExtension = _fileExt,
-            IndentChars = "   "
-         };
+      AddProjectDependencies(projectDoc, compiler);
+      WriteAutogeneratedComment(output);
 
-         // Enable "application" extension
-         var appExt = new Xcst.Web.Extension.ExtensionPackage {
-            ApplicationUri = startUri,
-            GenerateLinkTo = true,
-            //GenerateHref = true,
-            AnnotateVirtualPath = true
-         };
+      compiler.CompilationUnitHandler = href => output;
 
-         compiler.RegisterExtension(appExt);
+      foreach (var file in Directory.EnumerateFiles(startUri.LocalPath, "*." + _fileExt, SearchOption.AllDirectories)) {
 
-         // Enable WebQueryToolkit extension
-         if (_wqtExtEnable) {
+         var fileUri = new Uri(file, UriKind.Absolute);
+         var fileName = Path.GetFileName(file);
+         var fileBaseName = Path.GetFileNameWithoutExtension(file);
 
-            var wqtExtAssembly = Assembly.LoadFrom(
-               new Uri(startUri, @$"..\WebQueryToolkit.Extension\bin\{_configuration}\net5.0\WebQueryToolkit.Extension.dll").LocalPath)!;
-
-            compiler.RegisterExtension((IXcstPackage)Activator.CreateInstance(wqtExtAssembly.GetType("WebQueryToolkit.Extension.ExtensionPackage")!)!);
+         // Ignore files starting with underscore
+         if (fileName[0] == '_') {
+            continue;
          }
 
-         var projectDoc = XDocument.Load(_projectUri.LocalPath);
+         // Treat files ending with 'Package' as library packages; other files as pages
+         // An alternative would be to use different file extensions for library packages and pages
+         var isPage = PageEnable
+            && !fileBaseName.EndsWith("Package");
 
-         var rootNamespace = RootNamespace(projectDoc, _projectUri.LocalPath);
-         var nullable = Nullable(projectDoc);
+         compiler.TargetNamespace = FileNamespace(fileUri, startUri, rootNamespace);
 
-         if (nullable != null) {
-            compiler.NullableAnnotate = true;
-            compiler.NullableContext = nullable;
-         }
+         if (isPage) {
 
-         AddProjectDependencies(projectDoc, compiler);
-         WriteAutogeneratedComment(output);
+            compiler.TargetClass = "_Page_" + CleanIdentifier(fileBaseName);
 
-         compiler.CompilationUnitHandler = href => output;
-
-         foreach (var file in Directory.EnumerateFiles(startUri.LocalPath, "*." + _fileExt, SearchOption.AllDirectories)) {
-
-            var fileUri = new Uri(file, UriKind.Absolute);
-            var fileName = Path.GetFileName(file);
-            var fileBaseName = Path.GetFileNameWithoutExtension(file);
-
-            // Ignore files starting with underscore
-            if (fileName[0] == '_') {
-               continue;
+            if (PageBaseType != null) {
+               compiler.TargetBaseTypes = new[] { PageBaseType };
             }
 
-            // Treat files ending with 'Package' as library packages; other files as pages
-            // An alternative would be to use different file extensions for library packages and pages
-            var isPage = _pageEnable
-               && !fileBaseName.EndsWith("Package");
+         } else {
 
-            compiler.TargetNamespace = FileNamespace(fileUri, startUri, rootNamespace);
+            compiler.TargetClass = CleanIdentifier(fileBaseName);
+            compiler.TargetBaseTypes = null;
+         }
 
-            if (isPage) {
+         appExt.IsPage = isPage;
 
-               compiler.TargetClass = "_Page_" + CleanIdentifier(fileBaseName);
+         try {
+            compiler.Compile(fileUri);
 
-               if (_pageBaseType != null) {
-                  compiler.TargetBaseTypes = new[] { _pageBaseType };
-               }
+         } catch (RuntimeException ex) {
+            VisualStudioErrorLog(ex);
+            throw;
+         }
+      }
+   }
 
-            } else {
+   public static void
+   Main(string[] args) {
 
-               compiler.TargetClass = CleanIdentifier(fileBaseName);
-               compiler.TargetBaseTypes = null;
-            }
+      var currentDir = Environment.CurrentDirectory;
 
-            appExt.IsPage = isPage;
+      if (currentDir[^1] != Path.DirectorySeparatorChar) {
+         currentDir += Path.DirectorySeparatorChar;
+      }
 
-            try {
-               compiler.Compile(fileUri);
+      var callerBaseUri = new Uri(currentDir, UriKind.Absolute);
 
-            } catch (RuntimeException ex) {
-               VisualStudioErrorLog(ex);
-               throw;
-            }
+      var program = new Program {
+         ProjectUri = new Uri(callerBaseUri, args[0]),
+         Configuration = args[1]
+      };
+
+      bool nextArgIsValue(int i) =>
+         i + 1 < args.Length && args[i + 1][0] != '-';
+
+      bool switchArg(ref int i) =>
+         nextArgIsValue(i) ? Boolean.Parse(args[++i]) : true;
+
+      decimal decimalArg(ref int i) =>
+         nextArgIsValue(i) ? Decimal.Parse(args[++i], CultureInfo.InvariantCulture) : default;
+
+      string? stringArg(ref int i) =>
+         nextArgIsValue(i) ? args[++i] : null;
+
+      for (int i = 2; i < args.Length; i++) {
+
+         var name = args[i].Substring(1);
+
+         switch (name) {
+            case nameof(TargetRuntime):
+               program.TargetRuntime = decimalArg(ref i);
+               break;
+
+            case nameof(PageEnable):
+               program.PageEnable = switchArg(ref i);
+               break;
+
+            case nameof(PageBaseType):
+               program.PageBaseType = stringArg(ref i);
+               break;
+
+            case nameof(WqtExtensionEnable):
+               program.WqtExtensionEnable = switchArg(ref i);
+               break;
+
+            default:
+               throw new ArgumentException($"Unknown parameter '{name}'.", nameof(args));
          }
       }
 
-      public static void
-      Main(string[] args) {
+      var outputUri = new Uri(program.ProjectUri, $"xcst.generated.{ProjectLang(program.ProjectUri)}");
 
-         var currentDir = Environment.CurrentDirectory;
+      using var output = File.CreateText(outputUri.LocalPath);
 
-         if (currentDir.Last() != Path.DirectorySeparatorChar) {
-            currentDir += Path.DirectorySeparatorChar;
-         }
+      // Because XML parsers normalize CRLF to LF,
+      // we want to be consistent with the additional content we create
+      output.NewLine = "\n";
 
-         var callerBaseUri = new Uri(currentDir, UriKind.Absolute);
-         var projectUri = new Uri(callerBaseUri, args[0]);
-         var config = args[1];
-
-         var pageEnable = false;
-         string? pageBaseType = null;
-         var wqtExtEnable = false;
-
-         bool nextArgIsValue(int i) =>
-            i + 1 < args.Length
-               && args[i + 1][0] != '-';
-
-         for (int i = 2; i < args.Length; i++) {
-
-            var name = args[i].Substring(1);
-
-            switch (name) {
-               case "PageEnable":
-                  pageEnable = true;
-
-                  if (nextArgIsValue(i)) {
-                     i++;
-                     pageEnable = Boolean.Parse(args[i]);
-                  }
-                  break;
-
-               case "PageBaseType":
-
-                  if (nextArgIsValue(i)) {
-                     i++;
-                     pageBaseType = args[i];
-                  }
-                  break;
-
-               case "WqtExtensionEnable":
-                  wqtExtEnable = true;
-
-                  if (nextArgIsValue(i)) {
-                     i++;
-                     wqtExtEnable = Boolean.Parse(args[i]);
-                  }
-                  break;
-
-               default:
-                  throw new ArgumentException($"Unknown parameter '{name}'.", nameof(args));
-            }
-         }
-
-         var outputUri = new Uri(projectUri, $"xcst.generated.{ProjectLang(projectUri)}");
-
-         using var output = File.CreateText(outputUri.LocalPath);
-
-         // Because XML parsers normalize CRLF to LF,
-         // we want to be consistent with the additional content we create
-         output.NewLine = "\n";
-
-         new Program(projectUri, config, pageEnable, pageBaseType, wqtExtEnable)
-            .Run(output);
-      }
+      program.Run(output);
    }
 }
