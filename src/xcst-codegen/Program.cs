@@ -7,7 +7,6 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Xcst;
 using Xcst.Compiler;
-using Xcst.PackageModel;
 
 namespace XcstCodeGen;
 
@@ -174,13 +173,11 @@ class Program {
       }
 
       // Enable "application" extension
-      var appExt = new Xcst.Web.Extension.ExtensionPackage {
+      compiler.RegisterExtension(() => new Xcst.Web.Extension.ExtensionPackage {
          ApplicationUri = startUri,
          GenerateLinkTo = true,
          AnnotateVirtualPath = true
-      };
-
-      compiler.RegisterExtension(appExt);
+      });
 
       // Enable WebQueryToolkit extension
       if (WqtExtensionEnable) {
@@ -188,7 +185,7 @@ class Program {
          var wqtExtAssembly = Assembly.LoadFrom(
             new Uri(startUri, @$"..\WebQueryToolkit.Extension\bin\{Configuration}\net5.0\WebQueryToolkit.Extension.dll").LocalPath)!;
 
-         compiler.RegisterExtension((IXcstPackage)Activator.CreateInstance(wqtExtAssembly.GetType("WebQueryToolkit.Extension.ExtensionPackage")!)!);
+         compiler.RegisterExtension(() => (IXcstPackage)Activator.CreateInstance(wqtExtAssembly.GetType("WebQueryToolkit.Extension.ExtensionPackage")!)!);
       }
 
       var projectDoc = XDocument.Load(ProjectUri.LocalPath);
@@ -237,7 +234,7 @@ class Program {
             compiler.TargetBaseTypes = null;
          }
 
-         appExt.IsPage = isPage;
+         Xcst.Web.Extension.ExtensionPackage.IsPage(compiler.SetTunnelParam, isPage);
 
          try {
             compiler.Compile(fileUri);
