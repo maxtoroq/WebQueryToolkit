@@ -289,7 +289,9 @@
             <c:if test='rowUrl != null'>
                <c:attribute name='onclick'>window.location.href='{rowUrl}'</c:attribute>
             </c:if>
-            <td/>
+            <c:call-template name='table-cell-first'>
+               <c:with-param name='element' value='element'/>
+            </c:call-template>
             <c:for-each name='cell' in='cellsFn(row)'>
                <c:call-template name='table-cell'>
                   <c:with-param name='cell' value='cell'/>
@@ -298,6 +300,12 @@
             </c:for-each>
          </tr>
       </a:model>
+   </c:template>
+
+   <c:template name='table-cell-first' visibility='public'>
+      <c:param name='element' as='object' required='yes'/>
+
+      <td/>
    </c:template>
 
    <c:template name='table-cell' visibility='public' expand-text='yes'>
