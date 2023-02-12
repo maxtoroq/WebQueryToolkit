@@ -22,9 +22,13 @@
    <c:import-namespace ns='System'/>
    <c:import-namespace ns='System.Collections.Generic'/>
    <c:import-namespace ns='System.Linq'/>
-   <c:import-namespace ns='System.Web.Mvc'/>
-   <c:import-namespace ns='Xcst.PackageModel'/>
+   <c:import-namespace ns='Microsoft.AspNetCore.Mvc.ModelBinding.IModelMetadataProvider' alias='IModelMetadataProvider'/>
+   <c:import-namespace ns='Microsoft.AspNetCore.Mvc.ModelBinding.ModelMetadata' alias='ModelMetadata'/>
+   <c:import-namespace ns='Microsoft.AspNetCore.Mvc.ViewFeatures.ModelExplorer' alias='ModelExplorer'/>
+   <c:import-namespace ns='Microsoft.Extensions.DependencyInjection'/>
+   <c:import-namespace ns='Xcst'/>
    <c:import-namespace ns='Xcst.Web.Mvc'/>
+   <c:import-namespace ns='Xcst.Web.Mvc.ModelBinding'/>
 
    <c:variable name='page' value='((IXcstPackage)this).Context.TopLevelPackage' as='XcstViewPage'/>
 
@@ -38,7 +42,7 @@
       <c:script>
          <![CDATA[
 
-         Type? resultsType = queryResults.GetType();
+         var resultsType = queryResults.GetType();
          Type? elementType = null;
 
          while (resultsType != null) {
@@ -53,43 +57,50 @@
             resultsType = resultsType.BaseType;
          }
 
-         Type containerType = elementType
+         var containerType = elementType
             ?? throw new ArgumentException($"{nameof(queryResults)} must be an instance of {typeof(WebQueryResults<>).FullName}.", nameof(queryResults));
 
-         ModelMetadata[] columns = ModelMetadataProviders.Current
-            .GetMetadataForProperties(null, containerType)
+         var metadataProvider = this.page.HttpContext.RequestServices
+            .GetRequiredService<IModelMetadataProvider>();
+
+         var containerMetadata = metadataProvider.GetMetadataForType(containerType);
+
+         var columns = containerMetadata.Properties
             .Where(p => TableColumnDisplay(p))
-            .OrderBy(p => p.Order)
             .ToArray();
 
-         Func<object, ModelMetadata> rowFn = element => ModelMetadataProviders.Current
-            .GetMetadataForType(() => element, containerType);
+         ModelExplorer rowFn(object element) =>
+            new ModelExplorer(metadataProvider, containerMetadata, element);
 
-         Func<ModelMetadata, ModelMetadata[]> cellsFn = r => r.Properties
-            .Where(p => columns.Any(p2 => p2.PropertyName == p.PropertyName))
+         ModelExplorer[] cellsFn(ModelExplorer r) => r.Properties
+            .Where(p => columns.Any(p2 => p2.PropertyName == p.Metadata.PropertyName))
             .ToArray();
 
-         Func<ModelMetadata, bool> colSortableFn = c => TableColumnSort(c, queryResults);
-         Func<ModelMetadata, string?> colSortUrlFn = c => colSortableFn(c) ? TableColumnSortUrl(c, queryResults) : null;
+         bool colSortableFn(ModelMetadata c) =>
+            TableColumnSort(c, queryResults);
 
-         Func<string, bool> colSortingFn = s =>
+         string? colSortUrlFn(ModelMetadata c) =>
+            colSortableFn(c) ? TableColumnSortUrl(c, queryResults) : null;
+
+         bool colSortingFn(string s) =>
             queryResults.QueryParameters?.OrderBy?.Equals(s, StringComparison.OrdinalIgnoreCase) == true;
 
-         Func<ModelMetadata, string> colClassFn = c => string.Join(" ", new[] {
+         string colClassFn(ModelMetadata c) => string.Join(" ", new[] {
             (colSortableFn(c) ? "sortable" : null),
             (colSortingFn(c.PropertyName) ? "sorting asc" : null),
             (colSortingFn(c.PropertyName + " desc") ? "sorting desc" : null)
          }.Where(s => !string.IsNullOrEmpty(s)));
 
-         ModelStateDictionary modelState = this.page.ModelState;
+         var modelState = this.page.ModelState;
 
-         Func<ModelMetadata, bool> colFilterableFn = c => TableColumnFilter(c, queryResults);
+         bool colFilterableFn(ModelMetadata c) =>
+            TableColumnFilter(c, queryResults);
 
-         bool isFiltering = columns.Any(c => colFilterableFn(c)
+         var isFiltering = columns.Any(c => colFilterableFn(c)
             && modelState.ContainsKey(c.PropertyName)
-            && modelState[c.PropertyName]!.Value != null);
+            && modelState[c.PropertyName]!.RawValue != null);
 
-         object? filterModel = (!containerType.IsAbstract) ?
+         var filterModel = (!containerType.IsAbstract) ?
             Activator.CreateInstance(containerType)
             : null;
          ]]>
@@ -99,11 +110,11 @@
          <c:with-param name='tableId' value='tableId'/>
          <c:with-param name='tableClass' value='tableClass'/>
          <c:with-param name='queryResults' value='queryResults' tunnel='yes'/>
-         <c:with-param name='rowFn' value='rowFn' tunnel='yes'/>
-         <c:with-param name='cellsFn' value='cellsFn' tunnel='yes'/>
-         <c:with-param name='colClassFn' value='colClassFn' tunnel='yes'/>
-         <c:with-param name='colSortUrlFn' value='colSortUrlFn' tunnel='yes'/>
-         <c:with-param name='colFilterableFn' value='colFilterableFn' tunnel='yes'/>
+         <c:with-param name='rowFn' value='(Delegate)rowFn' tunnel='yes'/>
+         <c:with-param name='cellsFn' value='(Delegate)cellsFn' tunnel='yes'/>
+         <c:with-param name='colClassFn' value='(Delegate)colClassFn' tunnel='yes'/>
+         <c:with-param name='colSortUrlFn' value='(Delegate)colSortUrlFn' tunnel='yes'/>
+         <c:with-param name='colFilterableFn' value='(Delegate)colFilterableFn' tunnel='yes'/>
          <c:with-param name='filtersOptions' value='filtersOptions' tunnel='yes'/>
          <c:with-param name='filterModel' value='filterModel' tunnel='yes'/>
          <c:with-param name='isFiltering' value='isFiltering' tunnel='yes'/>
@@ -199,16 +210,17 @@
             </td>
             <a:model value='filterModel'>
                <c:for-each name='col' in='columns'>
+                  <c:variable name='propertyName' value='col.PropertyName!'/>
                   <td>
                      <c:choose>
                         <c:when test='colFilterableFn(col)'>
                            <div>
                               <c:choose>
-                                 <c:when test='filtersOptions?.ContainsKey(col.PropertyName) == true'>
-                                    <a:editor name='{col.PropertyName}' options='filtersOptions[col.PropertyName]' template='DropDownList' attributes='new { form }'/>
+                                 <c:when test='filtersOptions?.ContainsKey(propertyName) == true'>
+                                    <a:editor name='{propertyName}' options='filtersOptions[propertyName]' template='DropDownList' attributes='new { form }'/>
                                  </c:when>
                                  <c:otherwise>
-                                    <a:editor name='{col.PropertyName}' attributes='new { form, placeholder = "…" }'/>
+                                    <a:editor name='{propertyName}' attributes='new { form, placeholder = "…" }'/>
                                  </c:otherwise>
                               </c:choose>
                            </div>
@@ -252,8 +264,8 @@
 
    <c:template name='table-row' visibility='public' expand-text='yes'>
       <c:param name='element' as='object' required='yes'/>
-      <c:param name='rowFn' as='Func&lt;object, ModelMetadata>' required='yes' tunnel='yes'/>
-      <c:param name='cellsFn' as='Func&lt;ModelMetadata, ModelMetadata[]>' required='yes' tunnel='yes'/>
+      <c:param name='rowFn' as='Func&lt;object, ModelExplorer>' required='yes' tunnel='yes'/>
+      <c:param name='cellsFn' as='Func&lt;ModelExplorer, ModelExplorer[]>' required='yes' tunnel='yes'/>
       <c:param name='rowUrlFn' as='Func&lt;object, string>?' tunnel='yes'/>
 
       <c:variable name='row' value='rowFn(element)'/>
@@ -261,25 +273,27 @@
 
       <a:model value='row.Model' helper-name='htm'>
          <!-- Make sure ModelMetadata is the same for all elements -->
-         <c:set ref='htm.ViewData.ModelMetadata' value='row'/>
+         <c:set ref='htm.ViewData.ModelExplorer' value='row'/>
 
          <c:variable name='cellDisplayTmpl'>
             <c:delegate>
-               <c:param name='cell' as='ModelMetadata' required='yes'/>
+               <c:param name='cell' as='ModelExplorer' required='yes'/>
+
+               <c:variable name='propertyName' value='cell.Metadata.PropertyName!'/>
 
                <c:choose>
                   <c:when test='TableCellDisplayMode(cell)'>
-                     <a:display name='{cell.PropertyName}'/>
+                     <a:display name='{propertyName}'/>
                   </c:when>
                   <c:when test='TableCellTruncate(cell)'>
                      <div class='trunc'>
                         <c:attribute name='data-text'>
-                           <a:display-text name='{cell.PropertyName}'/>
+                           <a:display-text name='{propertyName}'/>
                         </c:attribute>
                      </div>
                   </c:when>
                   <c:otherwise>
-                     <a:display-text name='{cell.PropertyName}'/>
+                     <a:display-text name='{propertyName}'/>
                   </c:otherwise>
                </c:choose>
             </c:delegate>
@@ -289,9 +303,7 @@
             <c:if test='rowUrl != null'>
                <c:attribute name='onclick'>window.location.href='{rowUrl}'</c:attribute>
             </c:if>
-            <c:call-template name='table-cell-first'>
-               <c:with-param name='element' value='element'/>
-            </c:call-template>
+            <td/>
             <c:for-each name='cell' in='cellsFn(row)'>
                <c:call-template name='table-cell'>
                   <c:with-param name='cell' value='cell'/>
@@ -302,14 +314,8 @@
       </a:model>
    </c:template>
 
-   <c:template name='table-cell-first' visibility='public'>
-      <c:param name='element' as='object' required='yes'/>
-
-      <td/>
-   </c:template>
-
    <c:template name='table-cell' visibility='public' expand-text='yes'>
-      <c:param name='cell' as='ModelMetadata' required='yes'/>
+      <c:param name='cell' as='ModelExplorer' required='yes'/>
       <c:param name='cellDisplayTmpl' as='Xcst.XcstDelegate&lt;object?>' required='yes'/>
 
       <td>
@@ -339,7 +345,7 @@
 
       <c:return value='queryResults.QueryParameters?.Settings
          .FilterAllowedProperties
-         .Contains(col.PropertyName) == true'/>
+         .Contains(col.PropertyName!) == true'/>
    </c:function>
 
    <c:function name='TableColumnSort' as='bool' visibility='public'>
@@ -351,7 +357,7 @@
       <c:return value='settings != null
          &amp;&amp; settings.OrderByParameterAllowed
          &amp;&amp; (settings.OrderByAllowedProperties.Count == 0
-            || settings.OrderByAllowedProperties.Contains(col.PropertyName))'/>
+            || settings.OrderByAllowedProperties.Contains(col.PropertyName!))'/>
    </c:function>
 
    <c:function name='TableColumnSortUrl' as='string?' visibility='public'>
@@ -361,19 +367,19 @@
       <c:script>
          <![CDATA[
 
-         WebQueryParameters? queryParams = queryResults.QueryParameters;
+         var queryParams = queryResults.QueryParameters;
 
          if (queryParams != null) {
 
-            bool hasSortParam = queryParams.HasQueryParam(queryParams.Settings.OrderByParameterName);
+            var hasSortParam = queryParams.HasQueryParam(queryParams.Settings.OrderByParameterName);
 
-            Func<string, bool> isCurrentSort = s =>
+            bool isCurrentSort(string s) =>
                queryParams.OrderBy?.Equals(s, StringComparison.OrdinalIgnoreCase) == true;
 
-            string sortParam = col.PropertyName;
-            string sortParamDesc = sortParam + " desc";
+            var sortParam = col.PropertyName!;
+            var sortParamDesc = sortParam + " desc";
 
-            string sortVal = isCurrentSort(sortParamDesc) && hasSortParam ? string.Empty
+            var sortVal = isCurrentSort(sortParamDesc) && hasSortParam ? string.Empty
                : isCurrentSort(sortParam) ? sortParamDesc
                : sortParam;
 
@@ -388,19 +394,19 @@
    <c:function name='TableColumnHeaderText' as='string' visibility='public'>
       <c:param name='col' as='ModelMetadata'/>
 
-      <c:return value='col.ShortDisplayName ?? col.GetDisplayName()'/>
+      <c:return value='col.GetShortDisplayName() ?? col.GetDisplayName()'/>
    </c:function>
 
    <c:function name='TableCellDisplayMode' as='bool' visibility='public'>
-      <c:param name='cell' as='ModelMetadata'/>
+      <c:param name='cell' as='ModelExplorer'/>
 
-      <c:return value='!string.IsNullOrEmpty(cell.DataTypeName)
-         || !string.IsNullOrEmpty(cell.TemplateHint)
-         || !string.IsNullOrEmpty(cell.DisplayFormatString)'/>
+      <c:return value='!string.IsNullOrEmpty(cell.Metadata.DataTypeName)
+         || !string.IsNullOrEmpty(cell.Metadata.TemplateHint)
+         || !string.IsNullOrEmpty(cell.Metadata.DisplayFormatString)'/>
    </c:function>
 
    <c:function name='TableCellTruncate' as='bool' visibility='public'>
-      <c:param name='cell' as='ModelMetadata'/>
+      <c:param name='cell' as='ModelExplorer'/>
 
       <c:return value='true'/>
    </c:function>
@@ -416,33 +422,36 @@
          <c:script>
             <![CDATA[
 
-            int numberOfPages = queryResults.NumberOfPages;
-            int currentPage = queryResults.CurrentPage;
-            int skip = queryResults.QueryParameters.Skip;
+            var numberOfPages = queryResults.NumberOfPages;
+            var currentPage = queryResults.CurrentPage;
+            var skip = queryResults.QueryParameters.Skip;
 
             if (currentPage > numberOfPages) {
                currentPage = numberOfPages;
             }
 
-            bool displayPrevious = alwaysDisplayPreviousNext || currentPage > 1;
-            bool displayNext = alwaysDisplayPreviousNext || currentPage != numberOfPages;
-            int compressedDisplayLimit = (int)Decimal.Floor((maxPagesToDisplay / 2) - 1);
+            var displayPrevious = alwaysDisplayPreviousNext || currentPage > 1;
+            var displayNext = alwaysDisplayPreviousNext || currentPage != numberOfPages;
+            var compressedDisplayLimit = (int)Decimal.Floor((maxPagesToDisplay / 2) - 1);
 
-            int pagerStartPage = (numberOfPages == 0) ? 0
+            var pagerStartPage = (numberOfPages == 0) ? 0
                : (currentPage <= compressedDisplayLimit) ? 1
                : currentPage - compressedDisplayLimit;
 
-            int pagerEndPage = (numberOfPages == 0) ? 0
+            var pagerEndPage = (numberOfPages == 0) ? 0
                : ((currentPage + compressedDisplayLimit) >= numberOfPages) ? numberOfPages
                : currentPage + compressedDisplayLimit;
 
-            bool displayFirst = pagerStartPage > 1 && alwaysDisplayFirstLast;
-            bool displayLast = pagerEndPage < numberOfPages && alwaysDisplayFirstLast;
+            var displayFirst = pagerStartPage > 1 && alwaysDisplayFirstLast;
+            var displayLast = pagerEndPage < numberOfPages && alwaysDisplayFirstLast;
 
             currentPage = queryResults.CurrentPage;
 
-            Func<int, bool> activeFn = p => p == queryResults.CurrentPage;
-            Func<int, string?> pageUrlFn = p => PageUrl(queryResults, p, urlPath);
+            bool activeFn(int p) =>
+               p == queryResults.CurrentPage;
+
+            string? pageUrlFn(int p) =>
+               PageUrl(queryResults, p, urlPath);
             ]]>
          </c:script>
          <c:call-template name='pagination-list'>
@@ -455,8 +464,8 @@
             <c:with-param name='pagerStartPage' value='pagerStartPage'/>
             <c:with-param name='pagerEndPage' value='pagerEndPage'/>
             <c:with-param name='queryResults' value='queryResults' tunnel='yes'/>
-            <c:with-param name='activeFn' value='activeFn' tunnel='yes'/>
-            <c:with-param name='pageUrlFn' value='pageUrlFn' tunnel='yes'/>
+            <c:with-param name='activeFn' value='(Delegate)activeFn' tunnel='yes'/>
+            <c:with-param name='pageUrlFn' value='(Delegate)pageUrlFn' tunnel='yes'/>
          </c:call-template>
       </c:if>
    </c:template>
@@ -538,17 +547,20 @@
          <c:script>
             <![CDATA[
 
-            int currentPage = queryResults.CurrentPage;
-            int numberOfPages = queryResults.NumberOfPages;
-            int? totalCount = queryResults.TotalCount;
-            int skip = queryResults.QueryParameters.Skip;
-            int count = queryResults.Count;
+            var currentPage = queryResults.CurrentPage;
+            var numberOfPages = queryResults.NumberOfPages;
+            var totalCount = queryResults.TotalCount;
+            var skip = queryResults.QueryParameters.Skip;
+            var count = queryResults.Count;
 
-            int firstResultPosition = (count == 0) ? 0 : skip + 1;
-            int lastResultPosition = (count == 0) ? 0 : skip + count;
+            var firstResultPosition = (count == 0) ? 0 : skip + 1;
+            var lastResultPosition = (count == 0) ? 0 : skip + count;
 
-            Func<int, bool> activeFn = p => p == queryResults.CurrentPage;
-            Func<int, string?> pageUrlFn = p => PageUrl(queryResults, p, urlPath);
+            bool activeFn(int p) =>
+               p == queryResults.CurrentPage;
+
+            string? pageUrlFn(int p) =>
+               PageUrl(queryResults, p, urlPath);
             ]]>
          </c:script>
          <c:call-template name='pager-list'>
@@ -558,8 +570,8 @@
             <c:with-param name='lastResultPosition' value='lastResultPosition'/>
             <c:with-param name='totalCount' value='totalCount'/>
             <c:with-param name='queryResults' value='queryResults' tunnel='yes'/>
-            <c:with-param name='activeFn' value='activeFn' tunnel='yes'/>
-            <c:with-param name='pageUrlFn' value='pageUrlFn' tunnel='yes'/>
+            <c:with-param name='activeFn' value='(Delegate)activeFn' tunnel='yes'/>
+            <c:with-param name='pageUrlFn' value='(Delegate)pageUrlFn' tunnel='yes'/>
          </c:call-template>
       </c:if>
    </c:template>

@@ -1,12 +1,12 @@
 <Project>
 
   <PropertyGroup>
-    <XcstTargetRuntime Condition="'$(XcstTargetRuntime)'==''">1</XcstTargetRuntime>
+    <XcstTargetRuntime Condition="'$(XcstTargetRuntime)'==''">2</XcstTargetRuntime>
     <XcstPageEnable Condition="'$(XcstPageEnable)'==''">True</XcstPageEnable>
     <XcstPageBaseType Condition="'$(XcstPageBaseType)'==''">Xcst.Web.Mvc.XcstViewPage</XcstPageBaseType>
     <XcstInput Condition="'$(XcstInput)'==''">**\*.xcst</XcstInput>
     <XcstOutput Condition="'$(XcstOutput)'==''">xcst.generated.cs</XcstOutput>
-    <XcstCodegenExe Condition="'$(XcstCodegenExe)'==''">$(ProjectDir)..\xcst-codegen\bin\$(Configuration)\net5.0\xcst-codegen.exe</XcstCodegenExe>
+    <XcstCodegenExe Condition="'$(XcstCodegenExe)'==''">$(ProjectDir)..\xcst-codegen\bin\$(Configuration)\net7.0\xcst-codegen.exe</XcstCodegenExe>
     <XcstCodegenParams>-TargetRuntime $(XcstTargetRuntime) -PageEnable $(XcstPageEnable) -PageBaseType $(XcstPageBaseType) -WqtExtensionEnable $(WqtExtensionEnable) $(XcstCodegenParams)</XcstCodegenParams>
     <DefaultItemExcludes>$(DefaultItemExcludes);$(XcstOutput)</DefaultItemExcludes>
   </PropertyGroup>

@@ -174,6 +174,7 @@ class Program {
 
       // Enable "application" extension
       compiler.RegisterExtension(() => new Xcst.Web.Extension.ExtensionPackage {
+         TargetRuntime = 2m,
          ApplicationUri = startUri,
          GenerateLinkTo = true,
          AnnotateVirtualPath = true
@@ -183,7 +184,7 @@ class Program {
       if (WqtExtensionEnable) {
 
          var wqtExtAssembly = Assembly.LoadFrom(
-            new Uri(startUri, @$"..\WebQueryToolkit.Extension\bin\{Configuration}\net5.0\WebQueryToolkit.Extension.dll").LocalPath)!;
+            new Uri(startUri, @$"..\WebQueryToolkit.Extension\bin\{Configuration}\net7.0\WebQueryToolkit.Extension.dll").LocalPath)!;
 
          compiler.RegisterExtension(() => (IXcstPackage)Activator.CreateInstance(wqtExtAssembly.GetType("WebQueryToolkit.Extension.ExtensionPackage")!)!);
       }

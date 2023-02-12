@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-    <LangVersion>9</LangVersion>
+    <TargetFramework>net7.0</TargetFramework>
+    <LangVersion>10</LangVersion>
     <Nullable>enable</Nullable>
     <Description>WebQueryToolkit extension elements and attributes for XCST.</Description>
     <Product>WebQueryToolkit</Product>
     <Company>http://maxtoroq.github.io/WebQueryToolkit/</Company>
     <AssemblyVersion>2.0.0</AssemblyVersion>
-    <FileVersion>2.0.1</FileVersion>
+    <FileVersion>2.0.2</FileVersion>
     <XcstTargetRuntime>2</XcstTargetRuntime>
     <XcstPageEnable>False</XcstPageEnable>
     <WqtExtensionEnable>False</WqtExtensionEnable>
