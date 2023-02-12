@@ -216,8 +216,8 @@ var querySettings = new WebQuerySettings(
 WebQueryParameters queryParams = null;
 var filters = new TypeEntry();
 
-if (!Request.TryCreateWebQueryParameters(querySettings, out queryParams)
-   || !TryBind(filters, valueProvider: new QueryStringValueProvider(ViewContext))) {
+if (!(Request.TryCreateWebQueryParameters(querySettings, out queryParams)
+   && await TryUpdateModelAsync(filters, valueProvider: new QueryStringValueProvider(BindingSource.Query, HttpContext.Request.Query, CultureInfo.InvariantCulture)))) {
 
    Response.StatusCode = 404;
    return;
