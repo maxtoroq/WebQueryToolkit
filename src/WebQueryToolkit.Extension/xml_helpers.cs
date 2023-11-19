@@ -18,109 +18,108 @@ using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 
-namespace WebQueryToolkit.Extension {
+namespace WebQueryToolkit.Extension;
 
-   partial class ExtensionPackage {
+partial class ExtensionPackage {
 
-      static readonly char[]
-      _whiteSpaceChars = { (char)0x20, (char)0x9, (char)0xD, (char)0xA };
+   static readonly char[]
+   _whiteSpaceChars = { (char)0x20, (char)0x9, (char)0xD, (char)0xA };
 
-      static IEnumerable<XAttribute>
-      attributes(XElement node) =>
-         node.Attributes()
-            .Where(p => !p.IsNamespaceDeclaration);
+   static IEnumerable<XAttribute>
+   attributes(XElement node) =>
+      node.Attributes()
+         .Where(p => !p.IsNamespaceDeclaration);
 
-      static IEnumerable<XAttribute>
-      attributes(IEnumerable<XElement> nodes, XName name) =>
-         nodes.Select(p => p.Attribute(name))
-            .Where(p => p != null)
-            .Select(p => p!);
+   static IEnumerable<XAttribute>
+   attributes(IEnumerable<XElement> nodes, XName name) =>
+      nodes.Select(p => p.Attribute(name))
+         .Where(p => p != null)
+         .Select(p => p!);
 
-      static bool
-      fn_empty<T>(T[] p) => p.Length == 0;
+   static bool
+   fn_empty<T>(T[] p) => p.Length == 0;
 
-      static bool
-      fn_empty<T>(IEnumerable<T> p) => !p.Any();
+   static bool
+   fn_empty<T>(IEnumerable<T> p) => !p.Any();
 
-      static string
-      fn_name(XObject node) =>
-         node switch {
-            XAttribute a => fn_substring_before(a.ToString(), '='),
-            XElement el => fn_string(el.Name, el),
-            _ => throw new NotImplementedException()
-         };
+   static string
+   fn_name(XObject node) =>
+      node switch {
+         XAttribute a => fn_substring_before(a.ToString(), '='),
+         XElement el => fn_string(el.Name, el),
+         _ => throw new NotImplementedException()
+      };
 
-      static IEnumerable<XElement>
-      select(IEnumerable<XElement> nodes, params object[] names) =>
-         nodes.SelectMany(p => select(p, names));
+   static IEnumerable<XElement>
+   select(IEnumerable<XElement> nodes, params object[] names) =>
+      nodes.SelectMany(p => select(p, names));
 
-      static IEnumerable<XElement>
-      select(XElement? node, params object[] names) {
+   static IEnumerable<XElement>
+   select(XElement? node, params object[] names) {
 
-         if (node is null) {
-            return Enumerable.Empty<XElement>();
-         }
-
-         IEnumerable<XElement> selected = new XElement[] { node };
-
-         for (int i = 0; i < names.Length; i++) {
-
-            selected = names[i] switch {
-               XName name => selected.SelectMany(p => p.Elements(name)),
-               XNamespace ns => selected.SelectMany(p => p.Elements().Where(p2 => p2.Name.Namespace == ns)),
-               _ => throw new ArgumentOutOfRangeException(),
-            };
-         }
-
-         return selected;
+      if (node is null) {
+         return Enumerable.Empty<XElement>();
       }
 
-      static string
-      fn_string(bool value) =>
-         (value) ? "true" : "false";
+      IEnumerable<XElement> selected = new XElement[] { node };
 
-      static string
-      fn_string(int value) => XmlConvert.ToString(value);
+      for (int i = 0; i < names.Length; i++) {
 
-      static string
-      fn_string(XName qname, XElement? context) {
+         selected = names[i] switch {
+            XName name => selected.SelectMany(p => p.Elements(name)),
+            XNamespace ns => selected.SelectMany(p => p.Elements().Where(p2 => p2.Name.Namespace == ns)),
+            _ => throw new ArgumentOutOfRangeException(),
+         };
+      }
 
-         if (context is null) {
-            return qname.LocalName;
-         }
+      return selected;
+   }
 
-         var prefix = context.GetPrefixOfNamespace(qname.Namespace);
+   static string
+   fn_string(bool value) =>
+      (value) ? "true" : "false";
 
-         if (prefix != null) {
-            return prefix + ":" + qname.LocalName;
-         }
+   static string
+   fn_string(int value) => XmlConvert.ToString(value);
 
+   static string
+   fn_string(XName qname, XElement? context) {
+
+      if (context is null) {
          return qname.LocalName;
       }
 
-      static string
-      fn_string(XObject node) =>
-         node switch {
-            XAttribute a => a.Value,
-            XElement el => el.Value,
-            _ => throw new NotImplementedException()
-         };
+      var prefix = context.GetPrefixOfNamespace(qname.Namespace);
 
-      static string
-      fn_substring_before(string str, char c) {
-
-         var i = str.IndexOf(c);
-         return str.Substring(0, i);
+      if (prefix != null) {
+         return prefix + ":" + qname.LocalName;
       }
 
-      static string
-      trim(string? value) {
+      return qname.LocalName;
+   }
 
-         if (String.IsNullOrEmpty(value)) {
-            return String.Empty;
-         }
+   static string
+   fn_string(XObject node) =>
+      node switch {
+         XAttribute a => a.Value,
+         XElement el => el.Value,
+         _ => throw new NotImplementedException()
+      };
 
-         return value!.Trim(_whiteSpaceChars);
+   static string
+   fn_substring_before(string str, char c) {
+
+      var i = str.IndexOf(c);
+      return str.Substring(0, i);
+   }
+
+   static string
+   trim(string? value) {
+
+      if (String.IsNullOrEmpty(value)) {
+         return String.Empty;
       }
+
+      return value!.Trim(_whiteSpaceChars);
    }
 }

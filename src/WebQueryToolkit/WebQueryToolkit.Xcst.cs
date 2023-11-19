@@ -16,112 +16,111 @@
  * If you don't use WebQueryPackage you can ignore or remove.
  */
 
-namespace WebQueryToolkit {
+namespace WebQueryToolkit;
 
-   using System;
-   using System.ComponentModel;
-   using System.Linq;
+using System;
+using System.ComponentModel;
+using System.Linq;
 
-   [EditorBrowsable(EditorBrowsableState.Never)]
-   [AttributeUsage(AttributeTargets.Class)]
-   public class WebQueryableAttribute : Attribute {
+[EditorBrowsable(EditorBrowsableState.Never)]
+[AttributeUsage(AttributeTargets.Class)]
+public class WebQueryableAttribute : Attribute {
 
-      int
-      _top, _topMax;
+   int
+   _top, _topMax;
 
-      internal bool
-      _topSet, _topMaxSet;
+   internal bool
+   _topSet, _topMaxSet;
 
-      public string[]?
-      FilterAllowedProperties { get; set; }
+   public string[]?
+   FilterAllowedProperties { get; set; }
 
-      public string?
-      OrderBy { get; set; }
+   public string?
+   OrderBy { get; set; }
 
-      public string[]?
-      OrderByAllowedProperties { get; set; }
+   public string[]?
+   OrderByAllowedProperties { get; set; }
 
-      public bool
-      OrderByParameterAllowed { get; set; }
+   public bool
+   OrderByParameterAllowed { get; set; }
 
-      public string?
-      OrderByParameterName { get; set; }
+   public string?
+   OrderByParameterName { get; set; }
 
-      public bool
-      SkipParameterAllowed { get; set; }
+   public bool
+   SkipParameterAllowed { get; set; }
 
-      public string?
-      SkipParameterName { get; set; }
+   public string?
+   SkipParameterName { get; set; }
 
-      public int
-      Top {
-         get => _top;
-         set {
-            _top = value;
-            _topSet = true;
-         }
-      }
-
-      public int
-      TopMax {
-         get => _topMax;
-         set {
-            _topMax = value;
-            _topMaxSet = true;
-         }
-      }
-
-      public bool
-      TopParameterAllowed { get; set; }
-
-      public string?
-      TopParameterName { get; set; }
-   }
-
-   partial class WebQuerySettings {
-
-      /// <summary>
-      /// Creates <see cref="WebQuerySettings"/> for the provided annotated <paramref name="type"/>.
-      /// </summary>
-      public static WebQuerySettings
-      ForType(Type type) {
-
-         if (type is null) throw new ArgumentNullException(nameof(type));
-
-         WebQueryableAttribute attr = type
-            .GetCustomAttributes(typeof(WebQueryableAttribute), inherit: true)
-            .Cast<WebQueryableAttribute>()
-            .SingleOrDefault()
-            ?? throw new InvalidOperationException($"The type {type.FullName} is not annotated. Use wqt:queryable='yes'.");
-
-         return new WebQuerySettings(
-            filterAllowedProperties: attr.FilterAllowedProperties,
-            orderBy: attr.OrderBy,
-            orderByAllowedProperties: attr.OrderByAllowedProperties,
-            orderByParameterAllowed: attr.OrderByParameterAllowed,
-            orderByParameterName: attr.OrderByParameterName,
-            skipParameterAllowed: attr.SkipParameterAllowed,
-            skipParameterName: attr.SkipParameterName,
-            top: (attr._topSet) ? attr.Top : default(int?),
-            topMax: (attr._topMaxSet) ? attr.TopMax : default(int?),
-            topParameterAllowed: attr.TopParameterAllowed,
-            topParameterName: attr.TopParameterName
-         );
+   public int
+   Top {
+      get => _top;
+      set {
+         _top = value;
+         _topSet = true;
       }
    }
 
-   partial class WebQueryResults<TResult> {
-
-      /// <summary>
-      /// Converts a function delegate to the appropiate type expected
-      /// by the table (grid) control.
-      /// </summary>
-      public Func<object, string>
-      rowUrlFn(Func<TResult, string> urlFn) {
-
-         if (urlFn is null) throw new ArgumentNullException(nameof(urlFn));
-
-         return o => urlFn((TResult)o);
+   public int
+   TopMax {
+      get => _topMax;
+      set {
+         _topMax = value;
+         _topMaxSet = true;
       }
+   }
+
+   public bool
+   TopParameterAllowed { get; set; }
+
+   public string?
+   TopParameterName { get; set; }
+}
+
+partial class WebQuerySettings {
+
+   /// <summary>
+   /// Creates <see cref="WebQuerySettings"/> for the provided annotated <paramref name="type"/>.
+   /// </summary>
+   public static WebQuerySettings
+   ForType(Type type) {
+
+      if (type is null) throw new ArgumentNullException(nameof(type));
+
+      WebQueryableAttribute attr = type
+         .GetCustomAttributes(typeof(WebQueryableAttribute), inherit: true)
+         .Cast<WebQueryableAttribute>()
+         .SingleOrDefault()
+         ?? throw new InvalidOperationException($"The type {type.FullName} is not annotated. Use wqt:queryable='yes'.");
+
+      return new WebQuerySettings(
+         filterAllowedProperties: attr.FilterAllowedProperties,
+         orderBy: attr.OrderBy,
+         orderByAllowedProperties: attr.OrderByAllowedProperties,
+         orderByParameterAllowed: attr.OrderByParameterAllowed,
+         orderByParameterName: attr.OrderByParameterName,
+         skipParameterAllowed: attr.SkipParameterAllowed,
+         skipParameterName: attr.SkipParameterName,
+         top: (attr._topSet) ? attr.Top : default(int?),
+         topMax: (attr._topMaxSet) ? attr.TopMax : default(int?),
+         topParameterAllowed: attr.TopParameterAllowed,
+         topParameterName: attr.TopParameterName
+      );
+   }
+}
+
+partial class WebQueryResults<TResult> {
+
+   /// <summary>
+   /// Converts a function delegate to the appropiate type expected
+   /// by the table (grid) control.
+   /// </summary>
+   public Func<object, string>
+   rowUrlFn(Func<TResult, string> urlFn) {
+
+      if (urlFn is null) throw new ArgumentNullException(nameof(urlFn));
+
+      return o => urlFn((TResult)o);
    }
 }

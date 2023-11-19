@@ -15,28 +15,27 @@
 using System.Xml;
 using System.Xml.Linq;
 
-namespace WebQueryToolkit.Extension {
+namespace WebQueryToolkit.Extension;
 
-   partial class ExtensionPackage {
+partial class ExtensionPackage {
 
-      object
-      ErrorData(XObject node) {
+   object
+   ErrorData(XObject node) {
 
-         dynamic data = new System.Dynamic.ExpandoObject();
-         data.LineNumber = LineNumber(node);
-         data.ModuleUri = ModuleUri(node);
+      dynamic data = new System.Dynamic.ExpandoObject();
+      data.LineNumber = LineNumber(node);
+      data.ModuleUri = ModuleUri(node);
 
-         return data;
-      }
-
-      static int
-      LineNumber(XObject node) =>
-         (node is IXmlLineInfo li) ?
-            li.LineNumber
-            : -1;
-
-      static string
-      ModuleUri(XObject node) =>
-         node.Document?.BaseUri ?? node.BaseUri;
+      return data;
    }
+
+   static int
+   LineNumber(XObject node) =>
+      (node is IXmlLineInfo li) ?
+         li.LineNumber
+         : -1;
+
+   static string
+   ModuleUri(XObject node) =>
+      node.Document?.BaseUri ?? node.BaseUri;
 }
