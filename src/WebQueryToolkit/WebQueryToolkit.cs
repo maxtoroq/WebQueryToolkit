@@ -250,17 +250,17 @@ public class WebQueryParameters {
 
       parameters = null;
 
-      string? orderBy = null;
-      int? skip = null;
-      int? top = null;
+      var orderBy = default(string);
+      var skip = default(int?);
+      var top = default(int?);
 
       static string disallowedParamError(string param) =>
          $"The {param} parameter is disallowed.";
 
       for (int i = 0; i < urlQuery.Keys.Count; i++) {
 
-         string? key = urlQuery.Keys[i];
-         string[] values = urlQuery.GetValues(key)!;
+         var key = urlQuery.Keys[i];
+         var values = urlQuery.GetValues(key)!;
 
          if (key == settings.OrderByParameterName) {
 
@@ -273,7 +273,7 @@ public class WebQueryParameters {
                return false;
             }
 
-            Match orderByMatch = Regex.Match(orderBy, @"^(\w+)( desc)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+            var orderByMatch = Regex.Match(orderBy, @"^(\w+)( desc)?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
             if (!orderByMatch.Success) {
 
@@ -283,7 +283,7 @@ public class WebQueryParameters {
 
             if (settings.OrderByAllowedProperties.Count > 0) {
 
-               string orderByWithoutDir = orderByMatch.Groups[1].Value;
+               var orderByWithoutDir = orderByMatch.Groups[1].Value;
 
                if (!settings.OrderByAllowedProperties.Contains(orderByWithoutDir)) {
 
@@ -316,9 +316,7 @@ public class WebQueryParameters {
          }
       }
 
-      if (orderBy is null) {
-         orderBy = settings.OrderBy;
-      }
+      orderBy ??= settings.OrderBy;
 
       if (!top.HasValue
          && settings.Top.HasValue) {
@@ -382,7 +380,7 @@ public class WebQueryParameters {
 
       if (values.Length == 1) {
 
-         string value = values[0];
+         var value = values[0];
 
          if (!String.IsNullOrWhiteSpace(value)) {
             errorMessage = null;
@@ -413,16 +411,13 @@ public class WebQueryParameters {
          int skip,
          int? top) {
 
-      if (url is null) throw new ArgumentNullException(nameof(url));
-      if (settings is null) throw new ArgumentNullException(nameof(settings));
-
-      this.Url = url;
+      this.Url = url ?? throw new ArgumentNullException(nameof(url));
 
       _urlQuery = (urlQuery != null) ?
          new NameValueCollection(urlQuery)
          : null;
 
-      this.Settings = settings;
+      this.Settings = settings ?? throw new ArgumentNullException(nameof(settings));
       this.OrderBy = orderBy;
       this.Skip = skip;
       this.Top = top;
@@ -443,18 +438,18 @@ public class WebQueryParameters {
       if (this.PaginationEnabled
          && pageNumber > 0) {
 
-         int top = this.Top!.Value;
-         int skip = (pageNumber * top) - top;
+         var top = this.Top!.Value;
+         var skip = (pageNumber * top) - top;
 
-         NameValueCollection query = GetUrlQuery();
+         var query = GetUrlQuery();
          query.Remove(this.Settings.SkipParameterName);
 
          if (skip > 0) {
             query[this.Settings.SkipParameterName] = skip.ToString(CultureInfo.InvariantCulture);
          }
 
-         string path = urlPath ?? GetUrlPath();
-         string queryString = ToQueryString(query, includeDelimiter: true);
+         var path = urlPath ?? GetUrlPath();
+         var queryString = ToQueryString(query, includeDelimiter: true);
 
          return String.Concat(path, queryString);
       }
@@ -478,10 +473,10 @@ public class WebQueryParameters {
 
       if (this.Settings.OrderByParameterAllowed) {
 
-         bool isDefaultSort = this.Settings.OrderBy?
+         var isDefaultSort = this.Settings.OrderBy?
             .Equals(sortParam, StringComparison.OrdinalIgnoreCase) == true;
 
-         NameValueCollection query = GetUrlQuery();
+         var query = GetUrlQuery();
          query.Remove(this.Settings.OrderByParameterName);
 
          if (this.Settings.SkipParameterAllowed) {
@@ -494,8 +489,8 @@ public class WebQueryParameters {
             query[this.Settings.OrderByParameterName] = sortParam;
          }
 
-         string path = urlPath ?? GetUrlPath();
-         string queryString = ToQueryString(query, includeDelimiter: true);
+         var path = urlPath ?? GetUrlPath();
+         var queryString = ToQueryString(query, includeDelimiter: true);
 
          return String.Concat(path, queryString);
       }
@@ -510,8 +505,8 @@ public class WebQueryParameters {
          return this.Url.AbsolutePath;
       }
 
-      string urlStr = this.Url.OriginalString;
-      int pathEnd = urlStr.IndexOfAny(_pathEndDelimChars);
+      var urlStr = this.Url.OriginalString;
+      var pathEnd = urlStr.IndexOfAny(_pathEndDelimChars);
 
       if (pathEnd > -1) {
          return urlStr.Substring(0, pathEnd);
@@ -561,13 +556,13 @@ public class WebQueryParameters {
 
       for (int i = 0; i < qs.AllKeys.Length; i++) {
 
-         string? key = qs.AllKeys[i];
-         string[] values = qs.GetValues(key)!;
+         var key = qs.AllKeys[i];
+         var values = qs.GetValues(key)!;
 
          if (values != null
             && values.Length > 0) {
 
-            string? encodedKey =
+            var encodedKey =
                (String.IsNullOrEmpty(key) || key[0] == '$') ? key
                   : HttpUtility.UrlEncode(key);
 
@@ -642,8 +637,8 @@ public abstract class WebQueryResults : IEnumerable {
 
       if (this.QueryParameters != null) {
 
-         int skip = this.QueryParameters.Skip;
-         int top = this.QueryParameters.Top.GetValueOrDefault();
+         var skip = this.QueryParameters.Skip;
+         var top = this.QueryParameters.Top.GetValueOrDefault();
 
          this.NumberOfPages = (top == 0 || totalCount is null) ? 0
             : (int)Decimal.Ceiling(Decimal.Divide(totalCount.Value, top));
@@ -702,9 +697,7 @@ public partial class WebQueryResults<TResult> : WebQueryResults, IEnumerable<TRe
          int? totalCount = null,
          WebQueryParameters? queryParameters = null) : base(totalCount, queryParameters) {
 
-      if (results is null) throw new ArgumentNullException(nameof(results));
-
-      _results = results;
+      _results = results ?? throw new ArgumentNullException(nameof(results));
    }
 
    public new IEnumerator<TResult>

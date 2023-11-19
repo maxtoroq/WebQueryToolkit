@@ -43,7 +43,7 @@
          <![CDATA[
 
          var resultsType = queryResults.GetType();
-         Type? elementType = null;
+         var elementType = default(Type);
 
          while (resultsType != null) {
 
@@ -87,7 +87,7 @@
 
          string colClassFn(ModelMetadata c) => string.Join(" ", new[] {
             (colSortableFn(c) ? "sortable" : null),
-            (colSortingFn(c.PropertyName) ? "sorting asc" : null),
+            (colSortingFn(c.PropertyName!) ? "sorting asc" : null),
             (colSortingFn(c.PropertyName + " desc") ? "sorting desc" : null)
          }.Where(s => !string.IsNullOrEmpty(s)));
 
@@ -97,8 +97,8 @@
             TableColumnFilter(c, queryResults);
 
          var isFiltering = columns.Any(c => colFilterableFn(c)
-            && modelState.ContainsKey(c.PropertyName)
-            && modelState[c.PropertyName]!.RawValue != null);
+            && modelState.ContainsKey(c.PropertyName!)
+            && modelState[c.PropertyName!]!.RawValue != null);
 
          var filterModel = (!containerType.IsAbstract) ?
             Activator.CreateInstance(containerType)

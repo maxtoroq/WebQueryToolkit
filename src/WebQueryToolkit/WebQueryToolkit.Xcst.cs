@@ -88,7 +88,7 @@ partial class WebQuerySettings {
 
       if (type is null) throw new ArgumentNullException(nameof(type));
 
-      WebQueryableAttribute attr = type
+      var attr = type
          .GetCustomAttributes(typeof(WebQueryableAttribute), inherit: true)
          .Cast<WebQueryableAttribute>()
          .SingleOrDefault()

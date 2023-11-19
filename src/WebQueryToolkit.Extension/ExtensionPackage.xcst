@@ -29,7 +29,7 @@
    <template name='src:type-attribute-extra' visibility='public'>
       <param name='el' as='XElement' required='yes'/>
 
-      <if test='el.Attribute(wqt + "queryable") is XAttribute attr
+      <if test='el.Attribute(wqt + "queryable") is { } attr
             &amp;&amp; xcst_boolean(attr)'>
          <call-template name='web-queryable-attribute'>
             <with-param name='el' value='el'/>
@@ -52,7 +52,7 @@
             <call-template name='array-setter'>
                <with-param name='name'>FilterAllowedProperties</with-param>
                <with-param name='values' value='select(el, c + "member")
-                  .Where(p => p.Attribute(wqt + "filterable") is XAttribute filterableAttr
+                  .Where(p => p.Attribute(wqt + "filterable") is { } filterableAttr
                      &amp;&amp; xcst_boolean(filterableAttr))
                   .Select(p => xcst_name(p.Attribute("name")!))
                   .ToArray()'/>
@@ -60,7 +60,7 @@
             <call-template name='array-setter'>
                <with-param name='name'>OrderByAllowedProperties</with-param>
                <with-param name='values' value='select(el, c + "member")
-                  .Where(p => p.Attribute(wqt + "sortable") is XAttribute sortableAttr
+                  .Where(p => p.Attribute(wqt + "sortable") is { } sortableAttr
                      &amp;&amp; xcst_boolean(sortableAttr))
                   .Select(p => xcst_name(p.Attribute("name")!))
                   .ToArray()'/>
