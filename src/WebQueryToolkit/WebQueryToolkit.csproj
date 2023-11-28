@@ -7,13 +7,13 @@
     <Description>WebQueryToolkit core components.</Description>
     <Company>http://maxtoroq.github.io/WebQueryToolkit/</Company>
     <AssemblyVersion>2.0.0</AssemblyVersion>
-    <FileVersion>2.0.3</FileVersion>
+    <FileVersion>2.0.4</FileVersion>
     <XcstPageEnable>False</XcstPageEnable>
     <WqtExtensionEnable>False</WqtExtensionEnable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Xcst.AspNetCore" Version="2.0.7" />
+    <PackageReference Include="Xcst.AspNetCore" Version="2.0.11" />
   </ItemGroup>
 
   <Import Project="..\xcst-codegen\xcst-codegen.targets" />
