@@ -286,7 +286,7 @@ class Program {
       }
    }
 
-   public static void
+   public static int
    Main(string[] args) {
 
       const string optPrefix = "-";
@@ -349,8 +349,6 @@ class Program {
          program.Run();
       });
 
-      if (rootCmd.Invoke(args) != 0) {
-         throw new InvalidOperationException();
-      };
+      return rootCmd.Invoke(args);
    }
 }
