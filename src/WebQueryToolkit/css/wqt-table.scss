@@ -15,11 +15,9 @@
 table.wqt-table {
 
    > thead {
-      background-color: rgba(255, 255, 255, .85);
 
       th {
          cursor: default;
-         font-size: .9em;
 
          &.sortable {
 
@@ -143,14 +141,9 @@ table.wqt-table {
    }
 
    > tbody {
-      background-color: rgba(242, 245, 245, .8);
 
       > tr[onclick] {
          cursor: pointer;
-
-         &:not(.selected):hover {
-            background-color: rgba(228, 233, 233, .8);
-         }
       }
 
       .trunc {
