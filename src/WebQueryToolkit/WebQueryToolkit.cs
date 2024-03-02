@@ -752,7 +752,7 @@ public static partial class WebQueryExtensions {
          Scheme = request.Scheme,
          Host = request.Host.Host,
          Port = request.Host.Port ?? -1,
-         Path = request.Path,
+         Path = request.PathBase + request.Path,
          Query = request.QueryString.ToUriComponent()
       };
 
