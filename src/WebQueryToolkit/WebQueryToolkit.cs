@@ -16,6 +16,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -242,7 +243,7 @@ public class WebQueryParameters {
    /// <param name="errorMessage">Used when a parameter is not allowed or out of range.</param>
    /// <returns><code>true</code> if <paramref name="parameters"/> is set to a new instance.</returns>
    public static bool
-   TryCreate(Uri url, NameValueCollection urlQuery, WebQuerySettings settings, out WebQueryParameters? parameters, out string? errorMessage) {
+   TryCreate(Uri url, NameValueCollection urlQuery, WebQuerySettings settings, [NotNullWhen(returnValue: true)] out WebQueryParameters? parameters, out string? errorMessage) {
 
       if (url is null) throw new ArgumentNullException(nameof(url));
       if (urlQuery is null) throw new ArgumentNullException(nameof(urlQuery));
@@ -733,7 +734,7 @@ public static partial class WebQueryExtensions {
    TryCreateWebQueryParameters(
          this HttpRequest request,
          WebQuerySettings settings,
-         out WebQueryParameters? parameters) {
+         [NotNullWhen(returnValue: true)] out WebQueryParameters? parameters) {
 
       return WebQueryParameters.TryCreate(
          RequestUri(request),
